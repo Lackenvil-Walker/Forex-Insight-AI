@@ -168,8 +168,9 @@ function AdminHome() {
 function AdminSettings() {
   const [provider, setProvider] = useState("openai");
   const [modelId, setModelId] = useState("");
-  const [apiKey, setApiKey] = useState("");
+  const [endpointUrl, setEndpointUrl] = useState("");
   const [systemPrompt, setSystemPrompt] = useState("");
+  const [useCustomApi, setUseCustomApi] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<'idle' | 'success' | 'error'>('idle');
 
   const { data: config, isLoading } = useQuery({
@@ -197,8 +198,9 @@ function AdminSettings() {
     if (config) {
       setProvider(config.provider || "openai");
       setModelId(config.modelId || "");
-      setApiKey(config.apiKey || "");
+      setEndpointUrl(config.endpointUrl || "");
       setSystemPrompt(config.systemPrompt || "");
+      setUseCustomApi(config.useCustomApi === "true");
     }
   }, [config]);
 
@@ -247,8 +249,9 @@ function AdminSettings() {
     saveMutation.mutate({
       provider,
       modelId,
-      apiKey,
-      systemPrompt
+      endpointUrl,
+      systemPrompt,
+      useCustomApi: useCustomApi ? "true" : "false"
     });
   };
 
@@ -290,24 +293,39 @@ function AdminSettings() {
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label>API Key</Label>
-              <div className="flex gap-2">
-                <Input 
-                  type="password" 
-                  placeholder="sk-..." 
-                  className="font-mono"
-                  value={apiKey}
-                  onChange={(e) => setApiKey(e.target.value)}
-                />
+            <div className="flex items-center justify-between p-4 bg-muted/30 rounded-lg border border-border">
+              <div className="space-y-0.5">
+                <Label className="text-base">Use Custom API Key</Label>
+                <p className="text-sm text-muted-foreground">
+                  Toggle on to use your own OpenAI API key instead of built-in credits.
+                </p>
               </div>
-              <p className="text-xs text-muted-foreground">Keys are stored securely in environment variables.</p>
+              <SwitchUI 
+                checked={useCustomApi} 
+                onCheckedChange={setUseCustomApi}
+                data-testid="switch-use-custom-api"
+              />
             </div>
             
-            {provider === 'custom' && (
-               <div className="space-y-2">
-                <Label>Endpoint URL</Label>
-                <Input placeholder="https://api.example.com/v1/chat/completions" />
+            {useCustomApi && (
+              <div className="space-y-4 p-4 border border-primary/20 rounded-lg bg-primary/5">
+                <div className="space-y-2">
+                  <Label>Endpoint URL</Label>
+                  <Input 
+                    placeholder="https://api.openai.com/v1" 
+                    value={endpointUrl}
+                    onChange={(e) => setEndpointUrl(e.target.value)}
+                    data-testid="input-endpoint-url"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Default: https://api.openai.com/v1. Change for custom OpenAI-compatible endpoints.
+                  </p>
+                </div>
+                <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-md">
+                  <p className="text-sm text-amber-600 dark:text-amber-400">
+                    <strong>Note:</strong> Set your API key as CUSTOM_OPENAI_API_KEY in your environment secrets.
+                  </p>
+                </div>
               </div>
             )}
 

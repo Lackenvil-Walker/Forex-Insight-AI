@@ -1,11 +1,5 @@
 import OpenAI from "openai";
 
-// This is using Replit's AI Integrations service, which provides OpenAI-compatible API access without requiring your own OpenAI API key.
-const openai = new OpenAI({
-  baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
-  apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY
-});
-
 export interface ForexAnalysisResult {
   symbol: string;
   timeframe: string;
@@ -17,9 +11,38 @@ export interface ForexAnalysisResult {
   reasoning: string[];
 }
 
+export interface AIConfig {
+  provider: string;
+  modelId: string;
+  endpointUrl?: string | null;
+  useCustomApi: string;
+}
+
+function getOpenAIClient(config: AIConfig): OpenAI {
+  const useCustom = config.useCustomApi === "true";
+  
+  if (useCustom) {
+    const customApiKey = process.env.CUSTOM_OPENAI_API_KEY;
+    if (!customApiKey) {
+      throw new Error("Custom API key not configured. Please set CUSTOM_OPENAI_API_KEY in your environment variables.");
+    }
+    
+    return new OpenAI({
+      apiKey: customApiKey,
+      baseURL: config.endpointUrl || "https://api.openai.com/v1",
+    });
+  }
+  
+  return new OpenAI({
+    baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
+    apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
+  });
+}
+
 export async function analyzeForexChart(
   imageData: string,
-  systemPrompt?: string
+  systemPrompt?: string,
+  config?: AIConfig
 ): Promise<ForexAnalysisResult> {
   const defaultPrompt = `You are an expert forex trading analyst. Analyze the provided forex chart image and provide detailed trading signals.
 
@@ -36,10 +59,19 @@ You must respond with a valid JSON object containing the following fields:
 Analyze the chart carefully and provide actionable trading signals based on technical analysis.`;
 
   const prompt = systemPrompt || defaultPrompt;
+  
+  const aiConfig: AIConfig = config || {
+    provider: "openai",
+    modelId: "gpt-4o",
+    useCustomApi: "false",
+  };
+  
+  const openai = getOpenAIClient(aiConfig);
+  const model = aiConfig.modelId || "gpt-4o";
 
   try {
     const response = await openai.chat.completions.create({
-      model: "gpt-4o", // Using gpt-4o for vision capabilities
+      model,
       messages: [
         {
           role: "user",
@@ -63,14 +95,13 @@ Analyze the chart carefully and provide actionable trading signals based on tech
 
     const content = response.choices[0]?.message?.content;
     if (!content) {
-      throw new Error("No response from OpenAI");
+      throw new Error("No response from AI");
     }
 
     const result = JSON.parse(content) as ForexAnalysisResult;
     
-    // Validate the response has required fields
     if (!result.symbol || !result.trend || !result.confidence) {
-      throw new Error("Invalid response format from OpenAI");
+      throw new Error("Invalid response format from AI");
     }
 
     return result;

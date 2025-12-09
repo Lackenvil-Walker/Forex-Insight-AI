@@ -66,7 +66,12 @@ export async function registerRoutes(
         });
       }
 
-      const analysisResult = await analyzeForexChart(imageData, config.systemPrompt);
+      const analysisResult = await analyzeForexChart(imageData, config.systemPrompt, {
+        provider: config.provider,
+        modelId: config.modelId,
+        endpointUrl: config.endpointUrl,
+        useCustomApi: config.useCustomApi,
+      });
 
       const analysis = await storage.createAnalysis({
         userId,
@@ -147,7 +152,7 @@ export async function registerRoutes(
 
   app.put('/api/admin/config', isAuthenticated, requireAdmin, async (req, res) => {
     try {
-      const { provider, modelId, apiKey, systemPrompt } = req.body;
+      const { provider, modelId, endpointUrl, systemPrompt, useCustomApi } = req.body;
       
       let config = await storage.getSystemConfig();
       
@@ -155,15 +160,17 @@ export async function registerRoutes(
         config = await storage.createSystemConfig({
           provider: provider || 'openai',
           modelId: modelId || 'gpt-4o',
-          apiKey,
-          systemPrompt: systemPrompt || 'You are an expert forex trading analyst.'
+          endpointUrl,
+          systemPrompt: systemPrompt || 'You are an expert forex trading analyst.',
+          useCustomApi: useCustomApi || 'false'
         });
       } else {
         const updates: any = {};
         if (provider !== undefined) updates.provider = provider;
         if (modelId !== undefined) updates.modelId = modelId;
-        if (apiKey !== undefined) updates.apiKey = apiKey;
+        if (endpointUrl !== undefined) updates.endpointUrl = endpointUrl;
         if (systemPrompt !== undefined) updates.systemPrompt = systemPrompt;
+        if (useCustomApi !== undefined) updates.useCustomApi = useCustomApi;
         
         config = await storage.updateSystemConfig(config.id, updates);
       }

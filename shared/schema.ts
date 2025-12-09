@@ -57,8 +57,9 @@ export const systemConfig = pgTable("system_config", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   provider: text("provider").notNull().default("openai"),
   modelId: text("model_id").notNull().default("gpt-4o"),
-  apiKey: text("api_key"),
+  endpointUrl: text("endpoint_url"),
   systemPrompt: text("system_prompt").notNull(),
+  useCustomApi: text("use_custom_api").notNull().default("false"),
 });
 
 export const insertSystemConfigSchema = createInsertSchema(systemConfig).omit({
