@@ -1,6 +1,7 @@
 import {
   type User,
   type InsertUser,
+  type UpsertUser,
   type Analysis,
   type InsertAnalysis,
   type SystemConfig,
@@ -19,6 +20,7 @@ export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  upsertUser(user: UpsertUser): Promise<User>;
   getAllUsers(): Promise<User[]>;
   
   createAnalysis(analysis: InsertAnalysis): Promise<Analysis>;
@@ -47,6 +49,21 @@ export class DatabaseStorage implements IStorage {
 
   async createUser(insertUser: InsertUser): Promise<User> {
     const [user] = await db.insert(users).values(insertUser).returning();
+    return user;
+  }
+
+  async upsertUser(userData: UpsertUser): Promise<User> {
+    const [user] = await db
+      .insert(users)
+      .values(userData)
+      .onConflictDoUpdate({
+        target: users.id,
+        set: {
+          ...userData,
+          updatedAt: new Date(),
+        },
+      })
+      .returning();
     return user;
   }
 
