@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLocation, Switch, Route } from 'wouter';
 import { motion } from 'framer-motion';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { ChartUploader } from '@/components/ChartUploader';
 import { AnalysisResult } from '@/components/AnalysisResult';
 import { Layout } from '@/components/Layout';
@@ -12,53 +13,87 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch as SwitchUI } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
+import { useAuth } from '@/hooks/useAuth';
+import { toast } from 'sonner';
+import { isUnauthorizedError } from '@/lib/authUtils';
+import { formatDistanceToNow } from 'date-fns';
 
 function DashboardHome() {
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const { isAuthenticated, isLoading, user } = useAuth();
   const [analysisData, setAnalysisData] = useState<any>(null);
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
-  const [analysisCount, setAnalysisCount] = useState(0);
+
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      toast.error("Unauthorized", {
+        description: "You are logged out. Logging in again...",
+      });
+      setTimeout(() => {
+        window.location.href = "/api/login";
+      }, 500);
+    }
+  }, [isAuthenticated, isLoading]);
+
+  const analyzeMutation = useMutation({
+    mutationFn: async (file: File) => {
+      const reader = new FileReader();
+      const base64Promise = new Promise<string>((resolve) => {
+        reader.onloadend = () => {
+          const base64 = reader.result as string;
+          resolve(base64);
+        };
+        reader.readAsDataURL(file);
+      });
+
+      const imageData = await base64Promise;
+
+      const response = await fetch('/api/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageData }),
+        credentials: 'include'
+      });
+
+      if (!response.ok) {
+        if (response.status === 402) {
+          throw new Error('LIMIT_REACHED');
+        }
+        if (response.status === 401) {
+          throw new Error('UNAUTHORIZED');
+        }
+        throw new Error('Failed to analyze chart');
+      }
+
+      return response.json();
+    },
+    onSuccess: (data) => {
+      setAnalysisData(data.result);
+      toast.success("Analysis Complete", {
+        description: "Your chart has been analyzed successfully.",
+      });
+    },
+    onError: (error: Error) => {
+      if (isUnauthorizedError(error) || error.message === 'UNAUTHORIZED') {
+        window.location.href = "/api/login";
+        return;
+      }
+      if (error.message === 'LIMIT_REACHED') {
+        setShowSubscriptionModal(true);
+        toast.error("Daily Limit Reached", {
+          description: "You've used your free analysis for today. Upgrade to continue.",
+        });
+        return;
+      }
+      toast.error("Analysis Failed", {
+        description: error.message || "Failed to analyze chart. Please try again.",
+      });
+    }
+  });
 
   const handleAnalyze = async (file: File) => {
-    setIsAnalyzing(true);
     setAnalysisData(null);
     setShowSubscriptionModal(false);
-    
-    setTimeout(() => {
-      setIsAnalyzing(false);
-      const newCount = analysisCount + 1;
-      setAnalysisCount(newCount);
-
-      if (newCount > 1) {
-        setAnalysisData({
-             symbol: 'LOCKED',
-             timeframe: 'LOCKED',
-             trend: 'neutral',
-             confidence: 0,
-             entry: '---',
-             stopLoss: '---',
-             takeProfit: ['---'],
-             reasoning: ['Upgrade to Pro to view reasoning...']
-        });
-        setShowSubscriptionModal(true);
-      } else {
-        setAnalysisData({
-          symbol: 'EUR/USD',
-          timeframe: '4H',
-          trend: 'bullish',
-          confidence: 87,
-          entry: '1.0845',
-          stopLoss: '1.0810',
-          takeProfit: ['1.0890', '1.0950'],
-          reasoning: [
-            'Double bottom formation detected on 4H timeframe indicating reversal.',
-            'RSI showing bullish divergence at oversold levels.',
-            'Price action rejected from key support zone at 1.0820.',
-            'Moving Average cross (EMA 20/50) impending.',
-          ]
-        });
-      }
-    }, 3000);
+    analyzeMutation.mutate(file);
   };
 
   return (
@@ -76,31 +111,9 @@ function DashboardHome() {
         </div>
       </div>
 
-      {analysisCount >= 1 && !isAnalyzing && !analysisData && (
-           <div className="bg-yellow-500/10 border border-yellow-500/20 p-4 rounded-lg flex items-center gap-3 text-yellow-500 mb-4">
-               <Lock className="w-4 h-4" />
-               <span className="text-sm font-medium">You have used your 1 free daily analysis. Upgrade for unlimited access.</span>
-           </div>
-      )}
-
-      <ChartUploader onAnalyze={handleAnalyze} isAnalyzing={isAnalyzing} />
+      <ChartUploader onAnalyze={handleAnalyze} isAnalyzing={analyzeMutation.isPending} />
       
-      {analysisData && analysisCount > 1 ? (
-           <div className="relative blur-md select-none pointer-events-none opacity-50 transition-all duration-500">
-               <AnalysisResult data={{
-                  symbol: 'EUR/USD',
-                  timeframe: '4H',
-                  trend: 'bullish',
-                  confidence: 87,
-                  entry: '1.0845',
-                  stopLoss: '1.0810',
-                  takeProfit: ['1.0890', '1.0950'],
-                  reasoning: ['Analysis hidden due to plan limits.']
-               }} />
-           </div>
-      ) : (
-           <AnalysisResult data={analysisData} />
-      )}
+      <AnalysisResult data={analysisData} />
 
       {!analysisData && (
         <div className="mt-12">
@@ -139,13 +152,43 @@ function DashboardHome() {
 }
 
 function DashboardHistory() {
-  const history = [
-    { id: 1, pair: 'GBP/JPY', date: '2 hours ago', signal: 'BEARISH', result: 'Win', pips: '+45' },
-    { id: 2, pair: 'EUR/USD', date: '5 hours ago', signal: 'BULLISH', result: 'Loss', pips: '-20' },
-    { id: 3, pair: 'XAU/USD', date: '1 day ago', signal: 'BULLISH', result: 'Win', pips: '+120' },
-    { id: 4, pair: 'BTC/USD', date: '2 days ago', signal: 'NEUTRAL', result: 'Skipped', pips: '0' },
-    { id: 5, pair: 'USD/CAD', date: '3 days ago', signal: 'BEARISH', result: 'Win', pips: '+30' },
-  ];
+  const { isAuthenticated, isLoading } = useAuth();
+
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      toast.error("Unauthorized", {
+        description: "You are logged out. Logging in again...",
+      });
+      setTimeout(() => {
+        window.location.href = "/api/login";
+      }, 500);
+    }
+  }, [isAuthenticated, isLoading]);
+
+  const { data: analyses, isLoading: analysesLoading, error } = useQuery({
+    queryKey: ['analyses'],
+    queryFn: async () => {
+      const response = await fetch('/api/analyses', {
+        credentials: 'include'
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error('UNAUTHORIZED');
+        }
+        throw new Error('Failed to fetch analyses');
+      }
+
+      return response.json();
+    },
+    enabled: isAuthenticated && !isLoading,
+  });
+
+  if (error) {
+    if (error.message === 'UNAUTHORIZED') {
+      return null;
+    }
+  }
 
   return (
     <div className="max-w-6xl mx-auto space-y-8">
@@ -157,35 +200,61 @@ function DashboardHistory() {
       <Card>
         <CardHeader>
           <CardTitle>Recent Signals</CardTitle>
-          <CardDescription>Your last 30 days of trading analysis activity.</CardDescription>
+          <CardDescription>Your past trading analysis activity.</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            {history.map((item) => (
-              <div key={item.id} className="flex items-center justify-between p-4 rounded-lg border border-border bg-card/50 hover:bg-muted/50 transition-colors">
-                <div className="flex items-center gap-4">
-                  <div className={`p-2 rounded-full ${item.signal === 'BULLISH' ? 'bg-green-500/10 text-green-500' : item.signal === 'BEARISH' ? 'bg-red-500/10 text-red-500' : 'bg-yellow-500/10 text-yellow-500'}`}>
-                    {item.signal === 'BULLISH' ? <ArrowRight className="w-4 h-4 -rotate-45" /> : item.signal === 'BEARISH' ? <ArrowRight className="w-4 h-4 rotate-45" /> : <ArrowRight className="w-4 h-4" />}
+          {analysesLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="text-muted-foreground">Loading your analyses...</div>
+            </div>
+          ) : !analyses || analyses.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <History className="w-12 h-12 text-muted-foreground mb-4 opacity-50" />
+              <p className="text-muted-foreground">No analyses yet</p>
+              <p className="text-sm text-muted-foreground">Upload a chart to get started</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {analyses.map((analysis: any) => {
+                const trend = analysis.result?.trend || 'neutral';
+                const symbol = analysis.result?.symbol || 'Unknown';
+                const timeAgo = formatDistanceToNow(new Date(analysis.createdAt), { addSuffix: true });
+                
+                return (
+                  <div key={analysis.id} className="flex items-center justify-between p-4 rounded-lg border border-border bg-card/50 hover:bg-muted/50 transition-colors" data-testid={`analysis-${analysis.id}`}>
+                    <div className="flex items-center gap-4">
+                      <div className={`p-2 rounded-full ${
+                        trend === 'bullish' ? 'bg-green-500/10 text-green-500' : 
+                        trend === 'bearish' ? 'bg-red-500/10 text-red-500' : 
+                        'bg-yellow-500/10 text-yellow-500'
+                      }`}>
+                        {trend === 'bullish' ? <ArrowRight className="w-4 h-4 -rotate-45" /> : 
+                         trend === 'bearish' ? <ArrowRight className="w-4 h-4 rotate-45" /> : 
+                         <ArrowRight className="w-4 h-4" />}
+                      </div>
+                      <div>
+                        <p className="font-bold" data-testid={`text-symbol-${analysis.id}`}>{symbol}</p>
+                        <p className="text-xs text-muted-foreground" data-testid={`text-time-${analysis.id}`}>{timeAgo}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-8">
+                      <div className="text-right">
+                        <p className="text-sm font-medium uppercase" data-testid={`text-trend-${analysis.id}`}>{trend}</p>
+                        <p className="text-xs text-muted-foreground">Signal</p>
+                      </div>
+                      {analysis.result?.confidence && (
+                        <div className="text-right hidden md:block">
+                          <p className="text-sm font-bold text-primary" data-testid={`text-confidence-${analysis.id}`}>{analysis.result.confidence}%</p>
+                          <p className="text-xs text-muted-foreground">Confidence</p>
+                        </div>
+                      )}
+                      <Button variant="ghost" size="sm" data-testid={`button-details-${analysis.id}`}>Details</Button>
+                    </div>
                   </div>
-                  <div>
-                    <p className="font-bold">{item.pair}</p>
-                    <p className="text-xs text-muted-foreground">{item.date}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-8">
-                  <div className="text-right">
-                     <p className="text-sm font-medium">{item.signal}</p>
-                     <p className="text-xs text-muted-foreground">Signal</p>
-                  </div>
-                  <div className="text-right hidden md:block">
-                     <p className={`text-sm font-bold ${item.pips.startsWith('+') ? 'text-green-500' : item.pips === '0' ? 'text-muted-foreground' : 'text-red-500'}`}>{item.pips} pips</p>
-                     <p className="text-xs text-muted-foreground">Outcome</p>
-                  </div>
-                  <Button variant="ghost" size="sm">Details</Button>
-                </div>
-              </div>
-            ))}
-          </div>
+                );
+              })}
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

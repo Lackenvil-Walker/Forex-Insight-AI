@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Switch, Route, useLocation } from 'wouter';
 import { useAuth } from '@/lib/auth';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import { Layout } from '@/components/Layout';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -14,15 +15,39 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Users, DollarSign, Activity, AlertCircle, Save, CheckCircle2, XCircle, Loader2, Key } from 'lucide-react';
 import { toast } from "sonner";
+import { formatDistanceToNow } from 'date-fns';
 
 function AdminHome() {
-  const users = [
-    { id: 1, name: 'Alice Smith', email: 'alice@example.com', plan: 'Pro', status: 'Active', joined: '2023-10-15' },
-    { id: 2, name: 'Bob Jones', email: 'bob@example.com', plan: 'Basic', status: 'Active', joined: '2023-11-02' },
-    { id: 3, name: 'Charlie Day', email: 'charlie@example.com', plan: 'Pro', status: 'Past Due', joined: '2023-09-20' },
-    { id: 4, name: 'Diana Prince', email: 'diana@example.com', plan: 'Enterprise', status: 'Active', joined: '2023-12-01' },
-    { id: 5, name: 'Evan Wright', email: 'evan@example.com', plan: 'Basic', status: 'Cancelled', joined: '2023-08-10' },
-  ];
+  const { data: users, isLoading, error } = useQuery({
+    queryKey: ['admin-users'],
+    queryFn: async () => {
+      const response = await fetch('/api/admin/users', {
+        credentials: 'include'
+      });
+
+      if (!response.ok) {
+        if (response.status === 403) {
+          throw new Error('FORBIDDEN');
+        }
+        if (response.status === 401) {
+          throw new Error('UNAUTHORIZED');
+        }
+        throw new Error('Failed to fetch users');
+      }
+
+      return response.json();
+    },
+  });
+
+  if (error) {
+    if (error.message === 'FORBIDDEN') {
+      toast.error("Access Denied", {
+        description: "You do not have permission to access this resource.",
+      });
+    } else if (error.message === 'UNAUTHORIZED') {
+      window.location.href = "/api/login";
+    }
+  }
 
   return (
     <div className="max-w-7xl mx-auto space-y-8">
@@ -84,40 +109,56 @@ function AdminHome() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Plan</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Joined</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {users.map((user) => (
-                <TableRow key={user.id}>
-                  <TableCell className="font-medium">{user.name}</TableCell>
-                  <TableCell>{user.email}</TableCell>
-                  <TableCell>
-                    <Badge variant="outline" className={user.plan === 'Enterprise' ? 'border-primary text-primary' : ''}>
-                      {user.plan}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={user.status === 'Active' ? 'default' : user.status === 'Past Due' ? 'destructive' : 'secondary'}>
-                      {user.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>{user.joined}</TableCell>
-                  <TableCell className="text-right">
-                    <Button variant="ghost" size="sm">Edit</Button>
-                  </TableCell>
+          {isLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : !users || users.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <Users className="w-12 h-12 text-muted-foreground mb-4 opacity-50" />
+              <p className="text-muted-foreground">No users found</p>
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Plan</TableHead>
+                  <TableHead>Role</TableHead>
+                  <TableHead>Joined</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {users.map((user: any) => {
+                  const fullName = `${user.firstName} ${user.lastName}`.trim() || 'Unknown';
+                  const joinedDate = formatDistanceToNow(new Date(user.createdAt), { addSuffix: true });
+                  
+                  return (
+                    <TableRow key={user.id} data-testid={`row-user-${user.id}`}>
+                      <TableCell className="font-medium" data-testid={`text-name-${user.id}`}>{fullName}</TableCell>
+                      <TableCell data-testid={`text-email-${user.id}`}>{user.email || 'N/A'}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className={user.plan === 'pro' ? 'border-primary text-primary' : ''} data-testid={`badge-plan-${user.id}`}>
+                          {user.plan}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={user.role === 'admin' ? 'default' : 'secondary'} data-testid={`badge-role-${user.id}`}>
+                          {user.role}
+                        </Badge>
+                      </TableCell>
+                      <TableCell data-testid={`text-joined-${user.id}`}>{joinedDate}</TableCell>
+                      <TableCell className="text-right">
+                        <Button variant="ghost" size="sm" data-testid={`button-edit-${user.id}`}>Edit</Button>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
     </div>
@@ -129,69 +170,86 @@ function AdminSettings() {
   const [modelId, setModelId] = useState("");
   const [apiKey, setApiKey] = useState("");
   const [systemPrompt, setSystemPrompt] = useState("");
-  const [isTesting, setIsTesting] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<'idle' | 'success' | 'error'>('idle');
 
-  // Load from local storage on mount
-  useEffect(() => {
-    const config = localStorage.getItem('forex_ai_config');
-    if (config) {
-      const data = JSON.parse(config);
-      setProvider(data.provider || "openai");
-      setModelId(data.modelId || "");
-      setApiKey(data.apiKey || "");
-      setSystemPrompt(data.systemPrompt || "");
-    } else {
-      // Defaults
-      setModelId("gpt-4o");
-      setSystemPrompt(`You are an expert forex trader with 20 years of experience at top hedge funds. 
-Analyze the provided chart image for:
-1. Market Structure (Trends, Support/Resistance)
-2. Candlestick Patterns
-3. Key Indicators (RSI, MACD, EMAs if visible)
-4. Order Blocks and Liquidity Zones
-
-Provide a clear signal: BULLISH, BEARISH, or NEUTRAL.
-Include specific Entry, Stop Loss, and Take Profit levels.`);
-    }
-  }, []);
-
-  const handleTestConnection = () => {
-    if (!apiKey) {
-      toast.error("API Key Missing", { description: "Please enter an API key to test connection." });
-      return;
-    }
-
-    setIsTesting(true);
-    setConnectionStatus('idle');
-    
-    // Simulate API check
-    setTimeout(() => {
-      setIsTesting(false);
-      setConnectionStatus('success');
-      toast.success("Connection established successfully", {
-        description: `Verified connection to ${provider} (${modelId}).`
+  const { data: config, isLoading } = useQuery({
+    queryKey: ['admin-config'],
+    queryFn: async () => {
+      const response = await fetch('/api/admin/config', {
+        credentials: 'include'
       });
-    }, 2000);
-  };
+
+      if (!response.ok) {
+        if (response.status === 403) {
+          throw new Error('FORBIDDEN');
+        }
+        if (response.status === 401) {
+          throw new Error('UNAUTHORIZED');
+        }
+        throw new Error('Failed to fetch config');
+      }
+
+      return response.json();
+    },
+  });
+
+  useEffect(() => {
+    if (config) {
+      setProvider(config.provider || "openai");
+      setModelId(config.modelId || "");
+      setApiKey(config.apiKey || "");
+      setSystemPrompt(config.systemPrompt || "");
+    }
+  }, [config]);
+
+  const saveMutation = useMutation({
+    mutationFn: async (configData: any) => {
+      const response = await fetch('/api/admin/config', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(configData),
+        credentials: 'include'
+      });
+
+      if (!response.ok) {
+        if (response.status === 403) {
+          throw new Error('FORBIDDEN');
+        }
+        if (response.status === 401) {
+          throw new Error('UNAUTHORIZED');
+        }
+        throw new Error('Failed to save configuration');
+      }
+
+      return response.json();
+    },
+    onSuccess: () => {
+      toast.success("Configuration Saved", {
+        description: "Your AI settings have been updated successfully."
+      });
+    },
+    onError: (error: Error) => {
+      if (error.message === 'FORBIDDEN') {
+        toast.error("Access Denied", {
+          description: "You do not have permission to update configuration.",
+        });
+      } else if (error.message === 'UNAUTHORIZED') {
+        window.location.href = "/api/login";
+      } else {
+        toast.error("Save Failed", {
+          description: error.message || "Failed to save configuration.",
+        });
+      }
+    }
+  });
 
   const handleSave = () => {
-    setIsSaving(true);
-    
-    setTimeout(() => {
-      const config = {
-        provider,
-        modelId,
-        apiKey,
-        systemPrompt
-      };
-      localStorage.setItem('forex_ai_config', JSON.stringify(config));
-      setIsSaving(false);
-      toast.success("Configuration Saved", {
-        description: "Your AI settings have been securely stored locally."
-      });
-    }, 1000);
+    saveMutation.mutate({
+      provider,
+      modelId,
+      apiKey,
+      systemPrompt
+    });
   };
 
   return (
@@ -264,22 +322,22 @@ Include specific Entry, Stop Loss, and Take Profit levels.`);
 
             <div className="flex items-center justify-between p-4 bg-muted/30 rounded-lg border border-border">
               <div className="flex items-center gap-2">
-                {connectionStatus === 'idle' && <div className="w-2 h-2 rounded-full bg-muted-foreground" />}
-                {connectionStatus === 'success' && <CheckCircle2 className="w-5 h-5 text-green-500" />}
-                {connectionStatus === 'error' && <XCircle className="w-5 h-5 text-destructive" />}
+                {isLoading ? (
+                  <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+                ) : config ? (
+                  <CheckCircle2 className="w-5 h-5 text-green-500" />
+                ) : (
+                  <div className="w-2 h-2 rounded-full bg-muted-foreground" />
+                )}
                 <span className="text-sm font-medium">
-                  {connectionStatus === 'idle' ? 'Not Tested' : connectionStatus === 'success' ? 'Connected' : 'Connection Failed'}
+                  {isLoading ? 'Loading...' : config ? 'Configuration Loaded' : 'No Configuration'}
                 </span>
               </div>
-              <Button variant="outline" size="sm" onClick={handleTestConnection} disabled={isTesting}>
-                {isTesting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                Test Connection
-              </Button>
             </div>
           </CardContent>
           <CardFooter className="bg-muted/10 border-t border-border py-4">
-             <Button className="ml-auto gap-2" onClick={handleSave} disabled={isSaving}>
-                {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+             <Button className="ml-auto gap-2" onClick={handleSave} disabled={saveMutation.isPending} data-testid="button-save-config">
+                {saveMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                 Save API Configuration
              </Button>
           </CardFooter>
