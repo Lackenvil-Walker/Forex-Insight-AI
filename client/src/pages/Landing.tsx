@@ -117,7 +117,7 @@ export default function Landing() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <ul className="space-y-3 text-sm">
-                  <li className="flex items-center gap-2"><Check className="w-4 h-4 text-primary" /> 3 analyses per day</li>
+                  <li className="flex items-center gap-2"><Check className="w-4 h-4 text-primary" /> 1 analysis per day</li>
                   <li className="flex items-center gap-2"><Check className="w-4 h-4 text-primary" /> Basic pattern recognition</li>
                   <li className="flex items-center gap-2"><Check className="w-4 h-4 text-primary" /> Standard support</li>
                 </ul>
