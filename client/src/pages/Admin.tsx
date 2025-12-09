@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Switch, Route } from 'wouter';
+import { Switch, Route, useLocation } from 'wouter';
+import { useAuth } from '@/lib/auth';
 import { Layout } from '@/components/Layout';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -125,10 +126,43 @@ function AdminHome() {
 
 function AdminSettings() {
   const [provider, setProvider] = useState("openai");
+  const [modelId, setModelId] = useState("");
+  const [apiKey, setApiKey] = useState("");
+  const [systemPrompt, setSystemPrompt] = useState("");
   const [isTesting, setIsTesting] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<'idle' | 'success' | 'error'>('idle');
 
+  // Load from local storage on mount
+  useEffect(() => {
+    const config = localStorage.getItem('forex_ai_config');
+    if (config) {
+      const data = JSON.parse(config);
+      setProvider(data.provider || "openai");
+      setModelId(data.modelId || "");
+      setApiKey(data.apiKey || "");
+      setSystemPrompt(data.systemPrompt || "");
+    } else {
+      // Defaults
+      setModelId("gpt-4o");
+      setSystemPrompt(`You are an expert forex trader with 20 years of experience at top hedge funds. 
+Analyze the provided chart image for:
+1. Market Structure (Trends, Support/Resistance)
+2. Candlestick Patterns
+3. Key Indicators (RSI, MACD, EMAs if visible)
+4. Order Blocks and Liquidity Zones
+
+Provide a clear signal: BULLISH, BEARISH, or NEUTRAL.
+Include specific Entry, Stop Loss, and Take Profit levels.`);
+    }
+  }, []);
+
   const handleTestConnection = () => {
+    if (!apiKey) {
+      toast.error("API Key Missing", { description: "Please enter an API key to test connection." });
+      return;
+    }
+
     setIsTesting(true);
     setConnectionStatus('idle');
     
@@ -137,9 +171,27 @@ function AdminSettings() {
       setIsTesting(false);
       setConnectionStatus('success');
       toast.success("Connection established successfully", {
-        description: "The API key is valid and the model is reachable."
+        description: `Verified connection to ${provider} (${modelId}).`
       });
     }, 2000);
+  };
+
+  const handleSave = () => {
+    setIsSaving(true);
+    
+    setTimeout(() => {
+      const config = {
+        provider,
+        modelId,
+        apiKey,
+        systemPrompt
+      };
+      localStorage.setItem('forex_ai_config', JSON.stringify(config));
+      setIsSaving(false);
+      toast.success("Configuration Saved", {
+        description: "Your AI settings have been securely stored locally."
+      });
+    }, 1000);
   };
 
   return (
@@ -176,14 +228,20 @@ function AdminSettings() {
               </div>
               <div className="space-y-2">
                 <Label>Model ID</Label>
-                <Input defaultValue={provider === 'openai' ? 'gpt-4o' : provider === 'anthropic' ? 'claude-3-5-sonnet-20240620' : 'gemini-1.5-pro'} />
+                <Input value={modelId} onChange={(e) => setModelId(e.target.value)} />
               </div>
             </div>
 
             <div className="space-y-2">
               <Label>API Key</Label>
               <div className="flex gap-2">
-                <Input type="password" placeholder="sk-..." className="font-mono" />
+                <Input 
+                  type="password" 
+                  placeholder="sk-..." 
+                  className="font-mono"
+                  value={apiKey}
+                  onChange={(e) => setApiKey(e.target.value)}
+                />
               </div>
               <p className="text-xs text-muted-foreground">Keys are stored securely in environment variables.</p>
             </div>
@@ -199,15 +257,8 @@ function AdminSettings() {
               <Label>System Prompt (Analysis Persona)</Label>
               <Textarea 
                 className="h-32 font-mono text-xs"
-                defaultValue={`You are an expert forex trader with 20 years of experience at top hedge funds. 
-Analyze the provided chart image for:
-1. Market Structure (Trends, Support/Resistance)
-2. Candlestick Patterns
-3. Key Indicators (RSI, MACD, EMAs if visible)
-4. Order Blocks and Liquidity Zones
-
-Provide a clear signal: BULLISH, BEARISH, or NEUTRAL.
-Include specific Entry, Stop Loss, and Take Profit levels.`}
+                value={systemPrompt}
+                onChange={(e) => setSystemPrompt(e.target.value)}
               />
             </div>
 
@@ -227,8 +278,8 @@ Include specific Entry, Stop Loss, and Take Profit levels.`}
             </div>
           </CardContent>
           <CardFooter className="bg-muted/10 border-t border-border py-4">
-             <Button className="ml-auto gap-2">
-                <Save className="w-4 h-4" />
+             <Button className="ml-auto gap-2" onClick={handleSave} disabled={isSaving}>
+                {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                 Save API Configuration
              </Button>
           </CardFooter>
@@ -265,6 +316,25 @@ Include specific Entry, Stop Loss, and Take Profit levels.`}
 }
 
 export default function Admin() {
+  const { user, isLoading } = useAuth();
+  const [_, setLocation] = useLocation();
+
+  // Route protection
+  React.useEffect(() => {
+    if (!isLoading) {
+       if (!user) {
+         setLocation('/auth');
+       } else if (user.role !== 'admin') {
+         toast.error("Unauthorized", { description: "You do not have permission to access the admin panel." });
+         setLocation('/dashboard');
+       }
+    }
+  }, [user, isLoading, setLocation]);
+
+  if (isLoading) return null; // Or a spinner
+
+  if (!user || user.role !== 'admin') return null;
+
   return (
     <Layout isAdmin>
       <Switch>

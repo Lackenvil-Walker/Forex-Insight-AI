@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'wouter';
+import { useAuth } from '@/lib/auth';
 import { LayoutDashboard, LogOut, Settings, ShieldAlert, LineChart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -15,6 +16,7 @@ interface LayoutProps {
 
 export function Layout({ children, isAdmin = false }: LayoutProps) {
   const [location] = useLocation();
+  const { user, logout } = useAuth();
 
   const navItems = isAdmin ? [
     { icon: ShieldAlert, label: 'Admin Overview', href: '/admin' },
@@ -58,19 +60,21 @@ export function Layout({ children, isAdmin = false }: LayoutProps) {
         <div className="p-4 border-t border-border">
           <div className="flex items-center gap-3 mb-4 px-2">
             <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-xs font-bold">
-              JD
+              {user?.name?.charAt(0).toUpperCase() || 'U'}
             </div>
             <div className="flex-1 overflow-hidden">
-              <p className="text-sm font-medium truncate">John Doe</p>
+              <p className="text-sm font-medium truncate">{user?.name || 'Guest User'}</p>
               <p className="text-xs text-muted-foreground truncate">{isAdmin ? 'Administrator' : 'Pro Plan'}</p>
             </div>
           </div>
-          <Link href="/auth">
-            <Button variant="outline" className="w-full justify-start gap-2 text-muted-foreground hover:text-foreground border-dashed">
-              <LogOut className="w-4 h-4" />
-              Sign Out
-            </Button>
-          </Link>
+          <Button 
+            variant="outline" 
+            className="w-full justify-start gap-2 text-muted-foreground hover:text-foreground border-dashed"
+            onClick={logout}
+          >
+            <LogOut className="w-4 h-4" />
+            Sign Out
+          </Button>
         </div>
       </aside>
 

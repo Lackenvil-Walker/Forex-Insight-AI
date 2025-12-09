@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useAuth } from '@/lib/auth';
 import { useLocation } from 'wouter';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
@@ -8,8 +9,10 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export default function Auth() {
+  const { login } = useAuth();
   const [_, setLocation] = useLocation();
   const [isLoading, setIsLoading] = useState(false);
+  const [email, setEmail] = useState('');
 
   const handleAuth = (e: React.FormEvent) => {
     e.preventDefault();
@@ -17,12 +20,17 @@ export default function Auth() {
     // Simulate auth
     setTimeout(() => {
       setIsLoading(false);
-      setLocation('/dashboard');
+      login(email || 'trader@example.com', 'user');
     }, 1500);
   };
 
   const handleAdminLogin = () => {
-     setLocation('/admin');
+     // For demo purposes, we'll auto-login as admin
+     setIsLoading(true);
+     setTimeout(() => {
+       setIsLoading(false);
+       login('admin@forexai.com', 'admin');
+     }, 1000);
   }
 
   return (
@@ -48,7 +56,15 @@ export default function Auth() {
               <form onSubmit={handleAuth} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="email">Email</Label>
-                  <Input id="email" type="email" placeholder="trader@example.com" required className="bg-white/5 border-white/10" />
+                  <Input 
+                    id="email" 
+                    type="email" 
+                    placeholder="trader@example.com" 
+                    required 
+                    className="bg-white/5 border-white/10" 
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="password">Password</Label>
