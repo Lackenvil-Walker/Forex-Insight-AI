@@ -6,5 +6,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 }
 
 export function useAuth() {
-  return useAuthHook();
+  const authData = useAuthHook();
+  
+  const user = authData.user ? {
+    ...authData.user,
+    name: `${authData.user.firstName || ''} ${authData.user.lastName || ''}`.trim() || 'User',
+  } : null;
+  
+  return {
+    ...authData,
+    user,
+    logout: () => {
+      window.location.href = '/api/logout';
+    },
+  };
 }

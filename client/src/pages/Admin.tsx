@@ -399,7 +399,7 @@ export default function Admin() {
   React.useEffect(() => {
     if (!isLoading) {
        if (!user) {
-         setLocation('/auth');
+         window.location.href = '/api/login';
        } else if (user.role !== 'admin') {
          toast.error("Unauthorized", { description: "You do not have permission to access the admin panel." });
          setLocation('/dashboard');
