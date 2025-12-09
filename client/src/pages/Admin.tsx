@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Switch, Route, useLocation } from 'wouter';
 import { useAuth } from '@/lib/auth';
 import { useQuery, useMutation } from '@tanstack/react-query';
@@ -172,6 +172,7 @@ function AdminSettings() {
   const [systemPrompt, setSystemPrompt] = useState("");
   const [useCustomApi, setUseCustomApi] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const prevProviderRef = useRef<string | null>(null);
 
   const { data: config, isLoading } = useQuery({
     queryKey: ['admin-config'],
@@ -201,8 +202,20 @@ function AdminSettings() {
       setEndpointUrl(config.endpointUrl || "");
       setSystemPrompt(config.systemPrompt || "");
       setUseCustomApi(config.useCustomApi === "true");
+      prevProviderRef.current = config.provider || "openai";
     }
   }, [config]);
+
+  useEffect(() => {
+    if (prevProviderRef.current !== null && prevProviderRef.current !== provider) {
+      if (provider === 'groq') {
+        setModelId('llama-3.2-90b-vision-preview');
+      } else {
+        setModelId('gpt-4o');
+      }
+    }
+    prevProviderRef.current = provider;
+  }, [provider]);
 
   const saveMutation = useMutation({
     mutationFn: async (configData: any) => {
@@ -288,7 +301,31 @@ function AdminSettings() {
               </div>
               <div className="space-y-2">
                 <Label>Model ID</Label>
-                <Input value={modelId} onChange={(e) => setModelId(e.target.value)} />
+                <Select value={modelId} onValueChange={setModelId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select model" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {provider === 'groq' && (
+                      <>
+                        <SelectItem value="llama-3.2-90b-vision-preview">Llama 3.2 90B Vision</SelectItem>
+                        <SelectItem value="llama-3.2-11b-vision-preview">Llama 3.2 11B Vision</SelectItem>
+                      </>
+                    )}
+                    {provider === 'openai' && (
+                      <>
+                        <SelectItem value="gpt-4o">GPT-4o</SelectItem>
+                        <SelectItem value="gpt-4o-mini">GPT-4o Mini</SelectItem>
+                      </>
+                    )}
+                    {provider === 'replit' && (
+                      <>
+                        <SelectItem value="gpt-4o">GPT-4o</SelectItem>
+                        <SelectItem value="gpt-4o-mini">GPT-4o Mini</SelectItem>
+                      </>
+                    )}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 
