@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
+import { analyzeForexChart } from "./openai";
 
 export async function registerRoutes(
   httpServer: Server,
@@ -38,10 +39,10 @@ export async function registerRoutes(
   app.post('/api/analyze', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
-      const { imageUrl } = req.body;
+      const { imageData } = req.body;
 
-      if (!imageUrl) {
-        return res.status(400).json({ error: 'Image URL is required' });
+      if (!imageData) {
+        return res.status(400).json({ error: 'Image data is required' });
       }
 
       const user = await storage.getUser(userId);
@@ -56,21 +57,29 @@ export async function registerRoutes(
         return res.status(402).json({ error: 'Daily limit reached. Please upgrade your plan.' });
       }
 
+      let config = await storage.getSystemConfig();
+      if (!config) {
+        config = await storage.createSystemConfig({
+          provider: 'openai',
+          modelId: 'gpt-4o',
+          systemPrompt: 'You are an expert forex trading analyst. Analyze the provided chart image and provide trading signals including entry points, stop loss, take profit levels, and detailed reasoning.'
+        });
+      }
+
+      const analysisResult = await analyzeForexChart(imageData, config.systemPrompt);
+
       const analysis = await storage.createAnalysis({
         userId,
-        imageUrl,
-        result: {
-          signal: 'PENDING',
-          message: 'OpenAI integration not yet configured'
-        }
+        imageUrl: imageData,
+        result: analysisResult
       });
 
       await storage.incrementUsageCount(userId, today);
 
       res.json(analysis);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error creating analysis:", error);
-      res.status(500).json({ error: 'Failed to create analysis' });
+      res.status(500).json({ error: error.message || 'Failed to create analysis' });
     }
   });
 
