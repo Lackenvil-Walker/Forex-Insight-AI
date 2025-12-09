@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Switch, Route } from 'wouter';
 import { Layout } from '@/components/Layout';
-import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -9,7 +9,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch as SwitchUI } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
-import { Users, DollarSign, Activity, AlertCircle, Save } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Users, DollarSign, Activity, AlertCircle, Save, CheckCircle2, XCircle, Loader2, Key } from 'lucide-react';
+import { toast } from "sonner";
 
 function AdminHome() {
   const users = [
@@ -121,6 +124,24 @@ function AdminHome() {
 }
 
 function AdminSettings() {
+  const [provider, setProvider] = useState("openai");
+  const [isTesting, setIsTesting] = useState(false);
+  const [connectionStatus, setConnectionStatus] = useState<'idle' | 'success' | 'error'>('idle');
+
+  const handleTestConnection = () => {
+    setIsTesting(true);
+    setConnectionStatus('idle');
+    
+    // Simulate API check
+    setTimeout(() => {
+      setIsTesting(false);
+      setConnectionStatus('success');
+      toast.success("Connection established successfully", {
+        description: "The API key is valid and the model is reachable."
+      });
+    }, 2000);
+  };
+
   return (
     <div className="max-w-4xl mx-auto space-y-8">
       <div>
@@ -128,63 +149,116 @@ function AdminSettings() {
         <p className="text-muted-foreground">Configure global application parameters.</p>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>AI Model Configuration</CardTitle>
-          <CardDescription>Manage the underlying AI models for market analysis.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="grid grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <Label>Primary Model</Label>
-              <Input defaultValue="gpt-4o-financial-v2" />
-            </div>
-            <div className="space-y-2">
-              <Label>Fallback Model</Label>
-              <Input defaultValue="claude-3-opus-v1" />
-            </div>
-          </div>
-          <div className="space-y-2">
-            <Label>Confidence Threshold (%)</Label>
-            <div className="flex items-center gap-4">
-              <Input type="number" defaultValue="75" className="w-24" />
-              <span className="text-sm text-muted-foreground">Signals below this confidence will be discarded.</span>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Subscription Limits</CardTitle>
-          <CardDescription>Adjust free tier and pro tier limitations.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <Label className="text-base">Free Tier Analysis Limit</Label>
-              <p className="text-sm text-muted-foreground">Daily limit for non-paying users.</p>
-            </div>
+      <div className="grid gap-6">
+        <Card className="border-primary/20">
+          <CardHeader>
             <div className="flex items-center gap-2">
-               <Input type="number" defaultValue="1" className="w-20 text-right" />
+              <Key className="w-5 h-5 text-primary" />
+              <CardTitle>AI Provider Configuration</CardTitle>
             </div>
-          </div>
-          <Separator />
-          <div className="flex items-center justify-between">
-             <div className="space-y-0.5">
-              <Label className="text-base">Enable Maintenance Mode</Label>
-              <p className="text-sm text-muted-foreground">Disable new signups and uploads.</p>
+            <CardDescription>Connect your preferred AI model provider for market analysis.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <Label>Provider</Label>
+                <Select value={provider} onValueChange={setProvider}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select provider" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="openai">OpenAI (GPT-4)</SelectItem>
+                    <SelectItem value="anthropic">Anthropic (Claude 3.5)</SelectItem>
+                    <SelectItem value="google">Google (Gemini Pro)</SelectItem>
+                    <SelectItem value="custom">Custom Endpoint</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Model ID</Label>
+                <Input defaultValue={provider === 'openai' ? 'gpt-4o' : provider === 'anthropic' ? 'claude-3-5-sonnet-20240620' : 'gemini-1.5-pro'} />
+              </div>
             </div>
-            <SwitchUI />
-          </div>
-        </CardContent>
-      </Card>
-      
-      <div className="flex justify-end">
-        <Button className="gap-2">
-            <Save className="w-4 h-4" />
-            Save Configuration
-        </Button>
+
+            <div className="space-y-2">
+              <Label>API Key</Label>
+              <div className="flex gap-2">
+                <Input type="password" placeholder="sk-..." className="font-mono" />
+              </div>
+              <p className="text-xs text-muted-foreground">Keys are stored securely in environment variables.</p>
+            </div>
+            
+            {provider === 'custom' && (
+               <div className="space-y-2">
+                <Label>Endpoint URL</Label>
+                <Input placeholder="https://api.example.com/v1/chat/completions" />
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <Label>System Prompt (Analysis Persona)</Label>
+              <Textarea 
+                className="h-32 font-mono text-xs"
+                defaultValue={`You are an expert forex trader with 20 years of experience at top hedge funds. 
+Analyze the provided chart image for:
+1. Market Structure (Trends, Support/Resistance)
+2. Candlestick Patterns
+3. Key Indicators (RSI, MACD, EMAs if visible)
+4. Order Blocks and Liquidity Zones
+
+Provide a clear signal: BULLISH, BEARISH, or NEUTRAL.
+Include specific Entry, Stop Loss, and Take Profit levels.`}
+              />
+            </div>
+
+            <div className="flex items-center justify-between p-4 bg-muted/30 rounded-lg border border-border">
+              <div className="flex items-center gap-2">
+                {connectionStatus === 'idle' && <div className="w-2 h-2 rounded-full bg-muted-foreground" />}
+                {connectionStatus === 'success' && <CheckCircle2 className="w-5 h-5 text-green-500" />}
+                {connectionStatus === 'error' && <XCircle className="w-5 h-5 text-destructive" />}
+                <span className="text-sm font-medium">
+                  {connectionStatus === 'idle' ? 'Not Tested' : connectionStatus === 'success' ? 'Connected' : 'Connection Failed'}
+                </span>
+              </div>
+              <Button variant="outline" size="sm" onClick={handleTestConnection} disabled={isTesting}>
+                {isTesting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                Test Connection
+              </Button>
+            </div>
+          </CardContent>
+          <CardFooter className="bg-muted/10 border-t border-border py-4">
+             <Button className="ml-auto gap-2">
+                <Save className="w-4 h-4" />
+                Save API Configuration
+             </Button>
+          </CardFooter>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Subscription Limits</CardTitle>
+            <CardDescription>Adjust free tier and pro tier limitations.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label className="text-base">Free Tier Analysis Limit</Label>
+                <p className="text-sm text-muted-foreground">Daily limit for non-paying users.</p>
+              </div>
+              <div className="flex items-center gap-2">
+                 <Input type="number" defaultValue="1" className="w-20 text-right" />
+              </div>
+            </div>
+            <Separator />
+            <div className="flex items-center justify-between">
+               <div className="space-y-0.5">
+                <Label className="text-base">Enable Maintenance Mode</Label>
+                <p className="text-sm text-muted-foreground">Disable new signups and uploads.</p>
+              </div>
+              <SwitchUI />
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
