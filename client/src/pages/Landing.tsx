@@ -17,12 +17,12 @@ export default function Landing() {
              <span className="text-xl font-bold tracking-tight">FOREX<span className="text-primary">AI</span></span>
           </div>
           <div className="flex items-center gap-4">
-            <Link href="/auth">
-              <Button variant="ghost" className="hidden md:inline-flex">Sign In</Button>
-            </Link>
-            <Link href="/auth">
-              <Button>Get Started</Button>
-            </Link>
+            <a href="/api/login">
+              <Button variant="ghost" className="hidden md:inline-flex" data-testid="button-signin">Sign In</Button>
+            </a>
+            <a href="/api/login">
+              <Button data-testid="button-getstarted">Get Started</Button>
+            </a>
           </div>
         </div>
       </nav>
@@ -57,12 +57,12 @@ export default function Landing() {
               Upload your chart. Our AI analyzes market structure, price action, and indicators to give you institutional-grade trading setups in seconds.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Link href="/auth">
-                <Button size="lg" className="h-14 px-8 text-lg rounded-full">
+              <a href="/api/login">
+                <Button size="lg" className="h-14 px-8 text-lg rounded-full" data-testid="button-start-analyzing">
                   Start Analyzing Free <ArrowRight className="ml-2 w-5 h-5" />
                 </Button>
-              </Link>
-              <Button size="lg" variant="outline" className="h-14 px-8 text-lg rounded-full border-white/10 hover:bg-white/5">
+              </a>
+              <Button size="lg" variant="outline" className="h-14 px-8 text-lg rounded-full border-white/10 hover:bg-white/5" data-testid="button-demo">
                 View Live Demo
               </Button>
             </div>
@@ -144,9 +144,9 @@ export default function Landing() {
                 </ul>
               </CardContent>
               <CardFooter>
-                <Link href="/auth" className="w-full">
-                  <Button className="w-full h-12 text-md">Start Pro Trial</Button>
-                </Link>
+                <a href="/api/login" className="w-full">
+                  <Button className="w-full h-12 text-md" data-testid="button-pro-trial">Start Pro Trial</Button>
+                </a>
               </CardFooter>
             </Card>
 
