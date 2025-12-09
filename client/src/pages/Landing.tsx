@@ -17,6 +17,9 @@ export default function Landing() {
              <span className="text-xl font-bold tracking-tight">FOREX<span className="text-primary">AI</span></span>
           </div>
           <div className="flex items-center gap-4">
+            <Link href="/pricing">
+              <Button variant="ghost" className="hidden md:inline-flex" data-testid="button-pricing">Pricing</Button>
+            </Link>
             <a href="/api/login">
               <Button variant="ghost" className="hidden md:inline-flex" data-testid="button-signin">Sign In</Button>
             </a>
@@ -123,7 +126,9 @@ export default function Landing() {
                 </ul>
               </CardContent>
               <CardFooter>
-                <Button className="w-full" variant="outline">Get Started</Button>
+                <Link href="/pricing" className="w-full">
+                  <Button className="w-full" variant="outline" data-testid="button-starter-plan">Get Started</Button>
+                </Link>
               </CardFooter>
             </Card>
 
@@ -144,9 +149,9 @@ export default function Landing() {
                 </ul>
               </CardContent>
               <CardFooter>
-                <a href="/api/login" className="w-full">
+                <Link href="/pricing" className="w-full">
                   <Button className="w-full h-12 text-md" data-testid="button-pro-trial">Start Pro Trial</Button>
-                </a>
+                </Link>
               </CardFooter>
             </Card>
 
@@ -165,7 +170,9 @@ export default function Landing() {
                 </ul>
               </CardContent>
               <CardFooter>
-                <Button className="w-full" variant="outline">Contact Sales</Button>
+                <Link href="/pricing" className="w-full">
+                  <Button className="w-full" variant="outline" data-testid="button-institutional-plan">Contact Sales</Button>
+                </Link>
               </CardFooter>
             </Card>
           </div>
