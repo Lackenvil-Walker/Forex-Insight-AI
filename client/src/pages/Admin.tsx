@@ -308,22 +308,10 @@ function AdminSettings() {
             </div>
             
             {useCustomApi && (
-              <div className="space-y-4 p-4 border border-primary/20 rounded-lg bg-primary/5">
-                <div className="space-y-2">
-                  <Label>Endpoint URL</Label>
-                  <Input 
-                    placeholder="https://api.openai.com/v1" 
-                    value={endpointUrl}
-                    onChange={(e) => setEndpointUrl(e.target.value)}
-                    data-testid="input-endpoint-url"
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Default: https://api.openai.com/v1. Change for custom OpenAI-compatible endpoints.
-                  </p>
-                </div>
+              <div className="p-4 border border-primary/20 rounded-lg bg-primary/5">
                 <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-md">
                   <p className="text-sm text-amber-600 dark:text-amber-400">
-                    <strong>Note:</strong> Set your API key as CUSTOM_OPENAI_API_KEY in your environment secrets.
+                    <strong>Setup:</strong> Add your OpenAI API key as <code className="bg-black/20 px-1 rounded">CUSTOM_OPENAI_API_KEY</code> in the Secrets tab.
                   </p>
                 </div>
               </div>
