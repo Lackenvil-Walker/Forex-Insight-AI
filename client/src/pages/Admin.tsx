@@ -280,10 +280,9 @@ function AdminSettings() {
                     <SelectValue placeholder="Select provider" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="openai">OpenAI (GPT-4)</SelectItem>
-                    <SelectItem value="anthropic">Anthropic (Claude 3.5)</SelectItem>
-                    <SelectItem value="google">Google (Gemini Pro)</SelectItem>
-                    <SelectItem value="custom">Custom Endpoint</SelectItem>
+                    <SelectItem value="replit">Replit AI (Built-in)</SelectItem>
+                    <SelectItem value="groq">Groq</SelectItem>
+                    <SelectItem value="openai">OpenAI</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -293,21 +292,17 @@ function AdminSettings() {
               </div>
             </div>
 
-            <div className="flex items-center justify-between p-4 bg-muted/30 rounded-lg border border-border">
-              <div className="space-y-0.5">
-                <Label className="text-base">Use Custom API Key</Label>
-                <p className="text-sm text-muted-foreground">
-                  Toggle on to use your own OpenAI API key instead of built-in credits.
-                </p>
+            {provider === 'groq' && (
+              <div className="p-4 border border-primary/20 rounded-lg bg-primary/5">
+                <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-md">
+                  <p className="text-sm text-amber-600 dark:text-amber-400">
+                    <strong>Setup:</strong> Add your Groq API key as <code className="bg-black/20 px-1 rounded">GROQ_API_KEY</code> in the Secrets tab.
+                  </p>
+                </div>
               </div>
-              <SwitchUI 
-                checked={useCustomApi} 
-                onCheckedChange={setUseCustomApi}
-                data-testid="switch-use-custom-api"
-              />
-            </div>
-            
-            {useCustomApi && (
+            )}
+
+            {provider === 'openai' && (
               <div className="p-4 border border-primary/20 rounded-lg bg-primary/5">
                 <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-md">
                   <p className="text-sm text-amber-600 dark:text-amber-400">

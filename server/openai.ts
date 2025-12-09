@@ -15,28 +15,54 @@ export interface AIConfig {
   provider: string;
   modelId: string;
   endpointUrl?: string | null;
-  useCustomApi: string;
+  useCustomApi?: string;
 }
 
-function getOpenAIClient(config: AIConfig): OpenAI {
-  const useCustom = config.useCustomApi === "true";
+function getAIClient(config: AIConfig): OpenAI {
+  const provider = config.provider || "replit";
   
-  if (useCustom) {
-    const customApiKey = process.env.CUSTOM_OPENAI_API_KEY;
-    if (!customApiKey) {
-      throw new Error("Custom API key not configured. Please set CUSTOM_OPENAI_API_KEY in your environment variables.");
+  switch (provider) {
+    case "groq": {
+      const groqApiKey = process.env.GROQ_API_KEY;
+      if (!groqApiKey) {
+        throw new Error("Groq API key not configured. Please set GROQ_API_KEY in your environment secrets.");
+      }
+      return new OpenAI({
+        apiKey: groqApiKey,
+        baseURL: "https://api.groq.com/openai/v1",
+      });
     }
     
-    return new OpenAI({
-      apiKey: customApiKey,
-      baseURL: config.endpointUrl || "https://api.openai.com/v1",
-    });
+    case "openai": {
+      const openaiApiKey = process.env.CUSTOM_OPENAI_API_KEY;
+      if (!openaiApiKey) {
+        throw new Error("OpenAI API key not configured. Please set CUSTOM_OPENAI_API_KEY in your environment secrets.");
+      }
+      return new OpenAI({
+        apiKey: openaiApiKey,
+        baseURL: "https://api.openai.com/v1",
+      });
+    }
+    
+    case "replit":
+    default:
+      return new OpenAI({
+        baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
+        apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
+      });
   }
-  
-  return new OpenAI({
-    baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
-    apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
-  });
+}
+
+function getDefaultModel(provider: string): string {
+  switch (provider) {
+    case "groq":
+      return "llama-3.2-90b-vision-preview";
+    case "openai":
+      return "gpt-4o";
+    case "replit":
+    default:
+      return "gpt-4o";
+  }
 }
 
 export async function analyzeForexChart(
@@ -61,16 +87,15 @@ Analyze the chart carefully and provide actionable trading signals based on tech
   const prompt = systemPrompt || defaultPrompt;
   
   const aiConfig: AIConfig = config || {
-    provider: "openai",
+    provider: "replit",
     modelId: "gpt-4o",
-    useCustomApi: "false",
   };
   
-  const openai = getOpenAIClient(aiConfig);
-  const model = aiConfig.modelId || "gpt-4o";
+  const client = getAIClient(aiConfig);
+  const model = aiConfig.modelId || getDefaultModel(aiConfig.provider);
 
   try {
-    const response = await openai.chat.completions.create({
+    const response = await client.chat.completions.create({
       model,
       messages: [
         {
@@ -90,7 +115,7 @@ Analyze the chart carefully and provide actionable trading signals based on tech
         }
       ],
       response_format: { type: "json_object" },
-      max_completion_tokens: 8192,
+      max_tokens: 8192,
     });
 
     const content = response.choices[0]?.message?.content;
