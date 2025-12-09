@@ -7,11 +7,13 @@ import NotFound from "@/pages/not-found";
 import Landing from "@/pages/Landing";
 import Dashboard from "@/pages/Dashboard";
 import Admin from "@/pages/Admin";
+import Pricing from "@/pages/Pricing";
 
 function Router() {
   return (
     <Switch>
       <Route path="/" component={Landing} />
+      <Route path="/pricing" component={Pricing} />
       <Route path="/dashboard" component={Dashboard} />
       <Route path="/dashboard/*" component={Dashboard} />
       <Route path="/admin" component={Admin} />
