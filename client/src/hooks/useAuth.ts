@@ -12,15 +12,25 @@ interface User {
   updatedAt: string;
 }
 
+const GUEST_USER_ID = "guest-user";
+
 export function useAuth() {
   const { data: user, isLoading } = useQuery<User | null>({
     queryKey: ["/api/auth/user"],
     retry: false,
   });
 
+  const isGuest = user?.id === GUEST_USER_ID;
+  const isAuthenticated = !!user && !isGuest;
+  const isAdmin = user?.role === 'admin';
+
   return {
     user,
     isLoading,
-    isAuthenticated: true,
+    isAuthenticated,
+    isGuest,
+    isAdmin,
+    login: () => window.location.href = '/api/login',
+    logout: () => window.location.href = '/api/logout',
   };
 }

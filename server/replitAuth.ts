@@ -51,15 +51,21 @@ function updateUserSession(
   user.expires_at = user.claims?.exp;
 }
 
+const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || '').split(',').map(e => e.trim().toLowerCase()).filter(Boolean);
+
 async function upsertUser(
   claims: any,
 ) {
+  const email = claims["email"]?.toLowerCase();
+  const isAdmin = ADMIN_EMAILS.includes(email);
+  
   await storage.upsertUser({
     id: claims["sub"],
     email: claims["email"],
     firstName: claims["first_name"],
     lastName: claims["last_name"],
     profileImageUrl: claims["profile_image_url"],
+    role: isAdmin ? 'admin' : 'user',
   });
 }
 

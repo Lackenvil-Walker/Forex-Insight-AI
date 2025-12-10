@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link, useLocation } from 'wouter';
 import { useAuth } from '@/lib/auth';
-import { LayoutDashboard, LogOut, Settings, ShieldAlert, LineChart } from 'lucide-react';
+import { LayoutDashboard, LogOut, Settings, ShieldAlert, LineChart, LogIn } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Tooltip,
@@ -11,14 +11,14 @@ import {
 
 interface LayoutProps {
   children: React.ReactNode;
-  isAdmin?: boolean;
+  isAdminLayout?: boolean;
 }
 
-export function Layout({ children, isAdmin = false }: LayoutProps) {
+export function Layout({ children, isAdminLayout = false }: LayoutProps) {
   const [location] = useLocation();
-  const { user, logout } = useAuth();
+  const { user, logout, login, isAdmin, isGuest, isAuthenticated } = useAuth();
 
-  const navItems = isAdmin ? [
+  const baseNavItems = isAdminLayout ? [
     { icon: ShieldAlert, label: 'Admin Overview', href: '/admin' },
     { icon: Settings, label: 'System Settings', href: '/admin/settings' },
   ] : [
@@ -26,6 +26,10 @@ export function Layout({ children, isAdmin = false }: LayoutProps) {
     { icon: LineChart, label: 'My Analysis', href: '/dashboard/history' },
     { icon: Settings, label: 'Settings', href: '/dashboard/settings' },
   ];
+  
+  const navItems = isAdmin && !isAdminLayout 
+    ? [...baseNavItems, { icon: ShieldAlert, label: 'Admin Panel', href: '/admin' }]
+    : baseNavItems;
 
   return (
     <div className="min-h-screen bg-background flex">
@@ -60,21 +64,36 @@ export function Layout({ children, isAdmin = false }: LayoutProps) {
         <div className="p-4 border-t border-border">
           <div className="flex items-center gap-3 mb-4 px-2">
             <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-xs font-bold">
-              {user?.name?.charAt(0).toUpperCase() || 'U'}
+              {user?.name?.charAt(0).toUpperCase() || 'G'}
             </div>
             <div className="flex-1 overflow-hidden">
               <p className="text-sm font-medium truncate">{user?.name || 'Guest User'}</p>
-              <p className="text-xs text-muted-foreground truncate">{isAdmin ? 'Administrator' : 'Pro Plan'}</p>
+              <p className="text-xs text-muted-foreground truncate">
+                {isAdmin ? 'Administrator' : isGuest ? 'Guest' : user?.plan || 'Free Plan'}
+              </p>
             </div>
           </div>
-          <Button 
-            variant="outline" 
-            className="w-full justify-start gap-2 text-muted-foreground hover:text-foreground border-dashed"
-            onClick={logout}
-          >
-            <LogOut className="w-4 h-4" />
-            Sign Out
-          </Button>
+          {isGuest ? (
+            <Button 
+              variant="outline" 
+              className="w-full justify-start gap-2 text-muted-foreground hover:text-foreground border-dashed"
+              onClick={login}
+              data-testid="button-login"
+            >
+              <LogIn className="w-4 h-4" />
+              Sign In with Replit
+            </Button>
+          ) : (
+            <Button 
+              variant="outline" 
+              className="w-full justify-start gap-2 text-muted-foreground hover:text-foreground border-dashed"
+              onClick={logout}
+              data-testid="button-logout"
+            >
+              <LogOut className="w-4 h-4" />
+              Sign Out
+            </Button>
+          )}
         </div>
       </aside>
 

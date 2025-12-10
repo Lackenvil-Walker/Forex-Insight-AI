@@ -16,8 +16,9 @@ export function useAuth() {
   return {
     ...authData,
     user,
-    logout: () => {
-      window.location.href = '/api/logout';
-    },
+    isAdmin: authData.isAdmin,
+    isGuest: authData.isGuest,
+    login: authData.login,
+    logout: authData.logout,
   };
 }

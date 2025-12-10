@@ -408,7 +408,7 @@ function AdminSettings() {
 
 export default function Admin() {
   return (
-    <Layout isAdmin>
+    <Layout isAdminLayout>
       <Switch>
         <Route path="/admin" component={AdminHome} />
         <Route path="/admin/settings" component={AdminSettings} />

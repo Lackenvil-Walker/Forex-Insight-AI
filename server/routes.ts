@@ -1,10 +1,42 @@
-import type { Express } from "express";
+import type { Express, RequestHandler } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { analyzeForexChart } from "./openai";
 import { getUncachableStripeClient, getStripePublishableKey } from "./stripeClient";
 
 const GUEST_USER_ID = "guest-user";
+const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || '').split(',').map(e => e.trim().toLowerCase()).filter(Boolean);
+
+function getUserId(req: any): string {
+  if (req.isAuthenticated?.() && req.user?.claims?.sub) {
+    return req.user.claims.sub;
+  }
+  return GUEST_USER_ID;
+}
+
+function isAdmin(req: any): boolean {
+  if (!req.isAuthenticated?.()) return false;
+  const email = req.user?.claims?.email?.toLowerCase();
+  return ADMIN_EMAILS.includes(email);
+}
+
+const requireAdmin: RequestHandler = async (req: any, res, next) => {
+  if (!req.isAuthenticated?.()) {
+    return res.status(401).json({ error: 'Authentication required' });
+  }
+  
+  const userId = req.user?.claims?.sub;
+  if (!userId) {
+    return res.status(401).json({ error: 'Authentication required' });
+  }
+  
+  const user = await storage.getUser(userId);
+  if (!user || user.role !== 'admin') {
+    return res.status(403).json({ error: 'Admin access required' });
+  }
+  
+  next();
+};
 
 export async function registerRoutes(
   httpServer: Server,
@@ -27,6 +59,14 @@ export async function registerRoutes(
 
   app.get('/api/auth/user', async (req: any, res) => {
     try {
+      if (req.isAuthenticated?.() && req.user?.claims?.sub) {
+        const userId = req.user.claims.sub;
+        let user = await storage.getUser(userId);
+        if (user) {
+          res.json(user);
+          return;
+        }
+      }
       const user = await ensureGuestUser();
       res.json(user);
     } catch (error) {
@@ -37,7 +77,7 @@ export async function registerRoutes(
 
   app.post('/api/analyze', async (req: any, res) => {
     try {
-      const userId = GUEST_USER_ID;
+      const userId = getUserId(req);
       const { imageData } = req.body;
 
       if (!imageData) {
@@ -89,7 +129,8 @@ export async function registerRoutes(
 
   app.get('/api/analyses', async (req: any, res) => {
     try {
-      const analyses = await storage.getAnalysesByUser(GUEST_USER_ID);
+      const userId = getUserId(req);
+      const analyses = await storage.getAnalysesByUser(userId);
       res.json(analyses);
     } catch (error) {
       console.error("Error fetching analyses:", error);
@@ -114,7 +155,7 @@ export async function registerRoutes(
     }
   });
 
-  app.get('/api/admin/users', async (req, res) => {
+  app.get('/api/admin/users', requireAdmin, async (req, res) => {
     try {
       const users = await storage.getAllUsers();
       res.json(users);
@@ -124,7 +165,7 @@ export async function registerRoutes(
     }
   });
 
-  app.get('/api/admin/config', async (req, res) => {
+  app.get('/api/admin/config', requireAdmin, async (req, res) => {
     try {
       let config = await storage.getSystemConfig();
       
@@ -143,7 +184,7 @@ export async function registerRoutes(
     }
   });
 
-  app.put('/api/admin/config', async (req, res) => {
+  app.put('/api/admin/config', requireAdmin, async (req, res) => {
     try {
       const { provider, modelId, endpointUrl, systemPrompt, useCustomApi } = req.body;
       
@@ -222,7 +263,8 @@ export async function registerRoutes(
 
   app.get('/api/stripe/subscription', async (req: any, res) => {
     try {
-      const user = await storage.getUser(GUEST_USER_ID);
+      const userId = getUserId(req);
+      const user = await storage.getUser(userId);
       
       if (!user?.stripeSubscriptionId) {
         return res.json({ subscription: null });
@@ -238,7 +280,11 @@ export async function registerRoutes(
 
   app.post('/api/stripe/checkout', async (req: any, res) => {
     try {
-      const user = await ensureGuestUser();
+      const userId = getUserId(req);
+      let user = await storage.getUser(userId);
+      if (!user) {
+        user = await ensureGuestUser();
+      }
       const { priceId } = req.body;
 
       if (!priceId) {
@@ -251,9 +297,9 @@ export async function registerRoutes(
       if (!customerId) {
         const customer = await stripe.customers.create({
           email: user?.email || undefined,
-          metadata: { userId: GUEST_USER_ID },
+          metadata: { userId },
         });
-        await storage.updateUserStripeInfo(GUEST_USER_ID, { stripeCustomerId: customer.id });
+        await storage.updateUserStripeInfo(userId, { stripeCustomerId: customer.id });
         customerId = customer.id;
       }
 
@@ -275,7 +321,8 @@ export async function registerRoutes(
 
   app.post('/api/stripe/portal', async (req: any, res) => {
     try {
-      const user = await storage.getUser(GUEST_USER_ID);
+      const userId = getUserId(req);
+      const user = await storage.getUser(userId);
 
       if (!user?.stripeCustomerId) {
         return res.status(400).json({ error: 'No billing account found' });
