@@ -206,7 +206,7 @@ function AdminSettings() {
   useEffect(() => {
     if (prevProviderRef.current !== null && prevProviderRef.current !== provider) {
       if (provider === 'groq') {
-        setModelId('llama-3.2-90b-vision-preview');
+        setModelId('llama-3.2-11b-vision-preview');
       } else {
         setModelId('gpt-4o');
       }
@@ -303,8 +303,8 @@ function AdminSettings() {
                   <SelectContent>
                     {provider === 'groq' && (
                       <>
-                        <SelectItem value="llama-3.2-90b-vision-preview">Llama 3.2 90B Vision</SelectItem>
                         <SelectItem value="llama-3.2-11b-vision-preview">Llama 3.2 11B Vision</SelectItem>
+                        <SelectItem value="llama-3.3-70b-versatile">Llama 3.3 70B Versatile</SelectItem>
                       </>
                     )}
                     {provider === 'openai' && (
