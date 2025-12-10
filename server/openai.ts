@@ -56,7 +56,7 @@ function getAIClient(config: AIConfig): OpenAI {
 function getDefaultModel(provider: string): string {
   switch (provider) {
     case "groq":
-      return "llama-3.2-90b-vision-preview";
+      return "meta-llama/llama-4-scout-17b-16e-instruct";
     case "openai":
       return "gpt-4o";
     case "replit":
@@ -72,7 +72,7 @@ export async function analyzeForexChart(
 ): Promise<ForexAnalysisResult> {
   const defaultPrompt = `You are an expert forex trading analyst. Analyze the provided forex chart image and provide detailed trading signals.
 
-You must respond with a valid JSON object containing the following fields:
+IMPORTANT: You must respond ONLY with a valid JSON object, no other text. Your response must be valid JSON format with the following fields:
 - symbol: The forex pair (e.g., "EUR/USD", "GBP/JPY")
 - timeframe: The chart timeframe (e.g., "1H", "4H", "1D")
 - trend: The current trend ("bullish", "bearish", or "neutral")
@@ -82,7 +82,7 @@ You must respond with a valid JSON object containing the following fields:
 - takeProfit: Array of take profit levels as strings (e.g., ["1.0890", "1.0950"])
 - reasoning: Array of strings explaining your analysis (e.g., ["Double bottom detected at support", "RSI showing bullish divergence"])
 
-Analyze the chart carefully and provide actionable trading signals based on technical analysis.`;
+Analyze the chart carefully and provide actionable trading signals based on technical analysis. Remember: respond with JSON only.`;
 
   const prompt = systemPrompt || defaultPrompt;
   
