@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Switch, Route, useLocation } from 'wouter';
-import { useAuth } from '@/lib/auth';
+import { Switch, Route } from 'wouter';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { Layout } from '@/components/Layout';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from '@/components/ui/card';
@@ -44,8 +43,6 @@ function AdminHome() {
       toast.error("Access Denied", {
         description: "You do not have permission to access this resource.",
       });
-    } else if (error.message === 'UNAUTHORIZED') {
-      window.location.href = "/api/login";
     }
   }
 
@@ -248,8 +245,6 @@ function AdminSettings() {
         toast.error("Access Denied", {
           description: "You do not have permission to update configuration.",
         });
-      } else if (error.message === 'UNAUTHORIZED') {
-        window.location.href = "/api/login";
       } else {
         toast.error("Save Failed", {
           description: error.message || "Failed to save configuration.",
@@ -412,25 +407,6 @@ function AdminSettings() {
 }
 
 export default function Admin() {
-  const { user, isLoading } = useAuth();
-  const [_, setLocation] = useLocation();
-
-  // Route protection
-  React.useEffect(() => {
-    if (!isLoading) {
-       if (!user) {
-         window.location.href = '/api/login';
-       } else if (user.role !== 'admin') {
-         toast.error("Unauthorized", { description: "You do not have permission to access the admin panel." });
-         setLocation('/dashboard');
-       }
-    }
-  }, [user, isLoading, setLocation]);
-
-  if (isLoading) return null; // Or a spinner
-
-  if (!user || user.role !== 'admin') return null;
-
   return (
     <Layout isAdmin>
       <Switch>
