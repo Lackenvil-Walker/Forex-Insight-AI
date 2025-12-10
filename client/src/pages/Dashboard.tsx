@@ -1,13 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import { useLocation, Switch, Route } from 'wouter';
-import { motion } from 'framer-motion';
+import React, { useState } from 'react';
+import { Switch, Route } from 'wouter';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { ChartUploader } from '@/components/ChartUploader';
 import { AnalysisResult } from '@/components/AnalysisResult';
 import { Layout } from '@/components/Layout';
 import { SubscriptionModal } from '@/components/SubscriptionModal';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
-import { History, Clock, ArrowRight, Lock, Settings, Bell, User, Shield } from 'lucide-react';
+import { History, Clock, ArrowRight, Bell, User, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -15,24 +14,12 @@ import { Switch as SwitchUI } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
-import { isUnauthorizedError } from '@/lib/authUtils';
 import { formatDistanceToNow } from 'date-fns';
 
 function DashboardHome() {
-  const { isAuthenticated, isLoading, user } = useAuth();
+  const { user } = useAuth();
   const [analysisData, setAnalysisData] = useState<any>(null);
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
-
-  useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      toast.error("Unauthorized", {
-        description: "You are logged out. Logging in again...",
-      });
-      setTimeout(() => {
-        window.location.href = "/api/login";
-      }, 500);
-    }
-  }, [isAuthenticated, isLoading]);
 
   const analyzeMutation = useMutation({
     mutationFn: async (file: File) => {
@@ -73,10 +60,6 @@ function DashboardHome() {
       });
     },
     onError: (error: Error) => {
-      if (isUnauthorizedError(error) || error.message === 'UNAUTHORIZED') {
-        window.location.href = "/api/login";
-        return;
-      }
       if (error.message === 'LIMIT_REACHED') {
         setShowSubscriptionModal(true);
         toast.error("Daily Limit Reached", {
@@ -152,20 +135,7 @@ function DashboardHome() {
 }
 
 function DashboardHistory() {
-  const { isAuthenticated, isLoading } = useAuth();
-
-  useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      toast.error("Unauthorized", {
-        description: "You are logged out. Logging in again...",
-      });
-      setTimeout(() => {
-        window.location.href = "/api/login";
-      }, 500);
-    }
-  }, [isAuthenticated, isLoading]);
-
-  const { data: analyses, isLoading: analysesLoading, error } = useQuery({
+  const { data: analyses, isLoading: analysesLoading } = useQuery({
     queryKey: ['analyses'],
     queryFn: async () => {
       const response = await fetch('/api/analyses', {
@@ -173,22 +143,12 @@ function DashboardHistory() {
       });
 
       if (!response.ok) {
-        if (response.status === 401) {
-          throw new Error('UNAUTHORIZED');
-        }
         throw new Error('Failed to fetch analyses');
       }
 
       return response.json();
     },
-    enabled: isAuthenticated && !isLoading,
   });
-
-  if (error) {
-    if (error.message === 'UNAUTHORIZED') {
-      return null;
-    }
-  }
 
   return (
     <div className="max-w-6xl mx-auto space-y-8">

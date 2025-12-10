@@ -20,12 +20,9 @@ export default function Landing() {
             <Link href="/pricing">
               <Button variant="ghost" className="hidden md:inline-flex" data-testid="button-pricing">Pricing</Button>
             </Link>
-            <a href="/api/login">
-              <Button variant="ghost" className="hidden md:inline-flex" data-testid="button-signin">Sign In</Button>
-            </a>
-            <a href="/api/login">
+            <Link href="/dashboard">
               <Button data-testid="button-getstarted">Get Started</Button>
-            </a>
+            </Link>
           </div>
         </div>
       </nav>
@@ -60,14 +57,16 @@ export default function Landing() {
               Upload your chart. Our AI analyzes market structure, price action, and indicators to give you institutional-grade trading setups in seconds.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <a href="/api/login">
+              <Link href="/dashboard">
                 <Button size="lg" className="h-14 px-8 text-lg rounded-full" data-testid="button-start-analyzing">
                   Start Analyzing Free <ArrowRight className="ml-2 w-5 h-5" />
                 </Button>
-              </a>
-              <Button size="lg" variant="outline" className="h-14 px-8 text-lg rounded-full border-white/10 hover:bg-white/5" data-testid="button-demo">
-                View Live Demo
-              </Button>
+              </Link>
+              <Link href="/dashboard">
+                <Button size="lg" variant="outline" className="h-14 px-8 text-lg rounded-full border-white/10 hover:bg-white/5" data-testid="button-demo">
+                  View Live Demo
+                </Button>
+              </Link>
             </div>
           </motion.div>
         </div>
