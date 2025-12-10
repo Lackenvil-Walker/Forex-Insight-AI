@@ -3,9 +3,6 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { analyzeForexChart } from "./openai";
 import { getUncachableStripeClient, getStripePublishableKey } from "./stripeClient";
-import session from "express-session";
-import connectPgSimple from "connect-pg-simple";
-import pg from "pg";
 
 const GUEST_USER_ID = "guest-user";
 
@@ -13,21 +10,6 @@ export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
-  const pgSession = connectPgSimple(session);
-  const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
-  
-  app.set("trust proxy", 1);
-  app.use(session({
-    store: new pgSession({ pool, createTableIfMissing: true }),
-    secret: process.env.SESSION_SECRET || 'forexai-session-secret',
-    resave: false,
-    saveUninitialized: false,
-    cookie: { 
-      secure: process.env.NODE_ENV === 'production',
-      httpOnly: true,
-      maxAge: 30 * 24 * 60 * 60 * 1000
-    }
-  }));
 
   async function ensureGuestUser() {
     let user = await storage.getUser(GUEST_USER_ID);
