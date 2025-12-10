@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Switch, Route } from 'wouter';
+import { Switch, Route, useLocation } from 'wouter';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { Layout } from '@/components/Layout';
+import { useAuth } from '@/lib/auth';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -407,6 +408,35 @@ function AdminSettings() {
 }
 
 export default function Admin() {
+  const { isAdmin, isLoading, isGuest, login } = useAuth();
+  const [, navigate] = useLocation();
+  
+  useEffect(() => {
+    if (!isLoading) {
+      if (isGuest) {
+        login();
+        return;
+      }
+      if (!isAdmin) {
+        navigate('/dashboard');
+      }
+    }
+  }, [isAdmin, isLoading, isGuest, navigate, login]);
+  
+  if (isLoading) {
+    return (
+      <Layout isAdminLayout>
+        <div className="flex items-center justify-center h-64">
+          <div className="text-muted-foreground">Loading...</div>
+        </div>
+      </Layout>
+    );
+  }
+  
+  if (!isAdmin) {
+    return null;
+  }
+  
   return (
     <Layout isAdminLayout>
       <Switch>
