@@ -70,7 +70,7 @@ export function SubscriptionModal({ isOpen, onClose }: SubscriptionModalProps) {
             </CardContent>
             
             <CardFooter className="flex flex-col gap-3">
-              <Button className="w-full h-12 text-lg font-bold" onClick={() => window.location.href = '/auth'}>
+              <Button className="w-full h-12 text-lg font-bold" onClick={() => window.location.href = '/pricing'}>
                 <Zap className="w-4 h-4 mr-2 fill-current" />
                 Upgrade Now
               </Button>
