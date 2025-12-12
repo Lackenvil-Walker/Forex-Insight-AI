@@ -6,7 +6,7 @@ import { AnalysisResult } from '@/components/AnalysisResult';
 import { Layout } from '@/components/Layout';
 import { SubscriptionModal } from '@/components/SubscriptionModal';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
-import { History, Clock, ArrowRight, Bell, User, Shield, Coins, CreditCard } from 'lucide-react';
+import { History, Clock, ArrowRight, Bell, User, Shield, Coins } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -20,29 +20,6 @@ function DashboardHome() {
   const { user } = useAuth();
   const [analysisData, setAnalysisData] = useState<any>(null);
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
-  const [isPurchasing, setIsPurchasing] = useState(false);
-
-  const handlePurchaseCredits = async () => {
-    setIsPurchasing(true);
-    try {
-      const response = await fetch('/api/credits/checkout', {
-        method: 'POST',
-        credentials: 'include'
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to create checkout session');
-      }
-      
-      const { url } = await response.json();
-      window.location.href = url;
-    } catch (error) {
-      toast.error("Purchase Failed", {
-        description: "Could not initiate credit purchase. Please try again."
-      });
-      setIsPurchasing(false);
-    }
-  };
 
   const analyzeMutation = useMutation({
     mutationFn: async (file: File) => {
@@ -86,7 +63,7 @@ function DashboardHome() {
       if (error.message === 'LIMIT_REACHED') {
         setShowSubscriptionModal(true);
         toast.error("No Credits", {
-          description: "You need credits to analyze charts. Purchase credits to continue.",
+          description: "You need credits to analyze charts. Contact admin for credits.",
         });
         return;
       }
@@ -117,18 +94,6 @@ function DashboardHome() {
             <span className="font-medium">{user?.credits || 0}</span>
             <span className="text-muted-foreground">credits</span>
           </div>
-          {(user?.credits === 0 || !user?.credits) && (
-            <Button 
-              size="sm" 
-              onClick={handlePurchaseCredits}
-              disabled={isPurchasing}
-              className="gap-2"
-              data-testid="button-get-credits"
-            >
-              {isPurchasing ? <span className="animate-spin">...</span> : <CreditCard className="w-4 h-4" />}
-              Get Credits
-            </Button>
-          )}
           <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/30 px-3 py-1 rounded-full border border-border">
             <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
             System Online: GPT-4o Model Active
