@@ -2,7 +2,11 @@
 
 ## Overview
 
-ForexAI is a full-stack web application that provides AI-powered forex chart analysis. Users can upload trading charts and receive institutional-grade analysis including trend detection, entry/exit points, stop-loss levels, and trading recommendations. The platform uses a freemium model with usage tracking and subscription tiers.
+ForexAI is a full-stack web application that provides AI-powered forex chart analysis. Users can upload trading charts and receive institutional-grade analysis including trend detection, entry/exit points, stop-loss levels, and trading recommendations. The platform uses a credit-based model where admins manually manage user credits.
+
+## Recent Changes
+
+- **December 12, 2025**: Removed Stripe integration (not available in South Africa). Credits are now managed manually by admins via the admin panel. Users contact admin to purchase credits.
 
 ## User Preferences
 
