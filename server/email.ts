@@ -54,6 +54,10 @@ export async function sendVerificationEmail(to: string, token: string): Promise<
             <p style="color: #888; font-size: 14px;">
               This link will expire in 24 hours. If you didn't create an account with ForexAI, you can safely ignore this email.
             </p>
+            
+            <p style="color: #888; font-size: 14px; margin-top: 15px;">
+              <strong>Note:</strong> If you don't see this email in your inbox, please check your spam or junk folder.
+            </p>
           </div>
           
           <div style="text-align: center; color: #888; font-size: 12px;">
