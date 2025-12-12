@@ -1,0 +1,21 @@
+Endpoint
+/emails
+Date
+3 minutes ago
+Status
+Method
+POST
+User-Agent
+resend-node:4.0.0
+Response Body
+{
+  "name": "validation_error",
+  "message": "The send.silverock.co.za domain is not verified. Please, add and verify your domain on https://resend.com/domains"
+}
+Request Body
+{
+  "from": "ForexAI <noreply@send.silverock.co.za>",
+  "to": ["emmanuel.m@alintatechsolutions.co.za"],
+  "subject": "Verify your ForexAI account",
+  "html": "\n        <!DOCTYPE html>\n        <html>\n        <head>\n          <meta charset=\"utf-8\">\n          <title>Verify your email</title>\n        </head>\n        <body style=\"font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;\">\n          <div style=\"text-align: center; margin-bottom: 30px;\">\n            <h1 style=\"color: #0066ff; margin: 0;\">ForexAI</h1>\n            <p style=\"color: #666; margin-top: 5px;\">AI-Powered Trading Intelligence</p>\n          </div>\n          \n          <div style=\"background: #f8f9fa; border-radius: 8px; padding: 30px; margin-bottom: 20px;\">\n            <h2 style=\"margin-top: 0; color: #333;\">Verify your email address</h2>\n            <p style=\"color: #555; line-height: 1.6;\">\n              Thanks for signing up for ForexAI! Please click the button below to verify your email address and activate your account.\n            </p>\n            \n            <div style=\"text-align: center; margin: 30px 0;\">\n              <a href=\"https://d80566d5-f366-4e99-b5e9-9395b57e9ec1-00-2ln9il12jhwf8.janeway.replit.dev/verify-email?token=07e7b3bfbbedf2e06042394759d81bd2b11b96ed40b32641029cfb78e94bdff3\" \n                 style=\"background: #0066ff; color: white; padding: 14px 28px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: 500;\">\n                Verify Email Address\n              </a>\n            </div>\n            \n            <p style=\"color: #888; font-size: 14px;\">\n              This link will expire in 24 hours. If you didn't create an account with ForexAI, you can safely ignore this email.\n            </p>\n            \n            <p style=\"color: #888; font-size: 14px; margin-top: 15px;\">\n              <strong>Note:</strong> If you don't see this email in your inbox, please check your spam or junk folder.\n            </p>\n          </div>\n          \n          <div style=\"text-align: center; color: #888; font-size: 12px;\">\n            <p>&copy; 2025 ForexAI. All rights reserved.</p>\n          </div>\n        </body>\n        </html>\n      "
+}
