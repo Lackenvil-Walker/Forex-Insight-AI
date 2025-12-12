@@ -22,7 +22,7 @@ export async function sendVerificationEmail(to: string, token: string): Promise<
     const verifyUrl = `${baseUrl}/verify-email?token=${token}`;
     
     const { error } = await client.emails.send({
-      from: 'ForexAI <noreply@send.silverock.co.za>',
+      from: 'ForexAI <onboarding@resend.dev>',
       to: [to],
       subject: 'Verify your ForexAI account',
       html: `
