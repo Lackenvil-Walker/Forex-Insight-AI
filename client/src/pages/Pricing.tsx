@@ -1,8 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation, useSearch } from "wouter";
 import { motion } from "framer-motion";
-import { Check, Zap, Crown, Sparkles, ArrowLeft, Loader2, Globe } from "lucide-react";
+import { Check, Zap, Crown, Sparkles, ArrowLeft, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
@@ -17,60 +17,6 @@ interface CreditPackage {
   isActive: boolean;
 }
 
-interface CurrencyInfo {
-  code: string;
-  rate: number;
-  country: string;
-  symbol: string;
-}
-
-const currencySymbols: Record<string, string> = {
-  USD: "$",
-  EUR: "€",
-  GBP: "£",
-  JPY: "¥",
-  AUD: "A$",
-  CAD: "C$",
-  CHF: "CHF",
-  CNY: "¥",
-  INR: "₹",
-  NGN: "₦",
-  KES: "KSh",
-  GHS: "GH₵",
-  ZAR: "R",
-  BRL: "R$",
-  MXN: "MX$",
-  AED: "د.إ",
-  SAR: "﷼",
-  NZD: "NZ$",
-  SGD: "S$",
-  HKD: "HK$",
-  KRW: "₩",
-  TRY: "₺",
-  PLN: "zł",
-  SEK: "kr",
-  NOK: "kr",
-  DKK: "kr",
-  RUB: "₽",
-  PHP: "₱",
-  THB: "฿",
-  MYR: "RM",
-  IDR: "Rp",
-  VND: "₫",
-  EGP: "E£",
-  PKR: "₨",
-  BDT: "৳",
-  UAH: "₴",
-  CZK: "Kč",
-  HUF: "Ft",
-  RON: "lei",
-  ILS: "₪",
-  CLP: "CLP$",
-  COP: "COL$",
-  ARS: "ARS$",
-  PEN: "S/",
-};
-
 const tierIcons: Record<string, React.ReactNode> = {
   Starter: <Zap className="h-8 w-8 text-blue-500" />,
   Pro: <Sparkles className="h-8 w-8 text-purple-500" />,
@@ -83,8 +29,6 @@ export default function Pricing() {
   const { toast } = useToast();
   const { user, isLoading: authLoading } = useAuth();
   const queryClient = useQueryClient();
-  const [currencyInfo, setCurrencyInfo] = useState<CurrencyInfo | null>(null);
-  const [currencyLoading, setCurrencyLoading] = useState(true);
 
   const { data: packages, isLoading } = useQuery<CreditPackage[]>({
     queryKey: ["/api/credit-packages"],
@@ -94,52 +38,6 @@ export default function Pricing() {
       return res.json();
     },
   });
-
-  useEffect(() => {
-    const detectCurrency = async () => {
-      try {
-        const geoRes = await fetch("https://ipapi.co/json/");
-        if (!geoRes.ok) throw new Error("Geolocation failed");
-        const geoData = await geoRes.json();
-        const userCurrency = geoData.currency || "USD";
-        const country = geoData.country_name || "Unknown";
-
-        if (userCurrency === "ZAR") {
-          setCurrencyInfo(null);
-          setCurrencyLoading(false);
-          return;
-        }
-
-        const rateRes = await fetch(
-          `https://api.exchangerate-api.com/v4/latest/ZAR`
-        );
-        if (!rateRes.ok) throw new Error("Exchange rate failed");
-        const rateData = await rateRes.json();
-        const rate = rateData.rates[userCurrency];
-
-        if (rate) {
-          setCurrencyInfo({
-            code: userCurrency,
-            rate: rate,
-            country: country,
-            symbol: currencySymbols[userCurrency] || userCurrency,
-          });
-        }
-      } catch (error) {
-        console.log("Currency detection failed, using USD fallback");
-        setCurrencyInfo({
-          code: "USD",
-          rate: 0.055,
-          country: "United States",
-          symbol: "$",
-        });
-      } finally {
-        setCurrencyLoading(false);
-      }
-    };
-
-    detectCurrency();
-  }, []);
 
   const initializeMutation = useMutation({
     mutationFn: async (packageId: string) => {
@@ -210,29 +108,14 @@ export default function Pricing() {
     initializeMutation.mutate(packageId);
   };
 
-  const formatPrice = (priceInCents: number) => {
+  const formatPriceUSD = (priceInCents: number) => {
     const zarAmount = priceInCents / 100;
-    const zarFormatted = new Intl.NumberFormat("en-ZA", {
+    const usdAmount = zarAmount / 18;
+    return new Intl.NumberFormat("en-US", {
       style: "currency",
-      currency: "ZAR",
+      currency: "USD",
       minimumFractionDigits: 0,
-    }).format(zarAmount);
-
-    let localFormatted = null;
-    let localCurrency = null;
-
-    if (currencyInfo) {
-      const localAmount = zarAmount * currencyInfo.rate;
-      localFormatted = new Intl.NumberFormat("en-US", {
-        style: "currency",
-        currency: currencyInfo.code,
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0,
-      }).format(localAmount);
-      localCurrency = currencyInfo.code;
-    }
-
-    return { zar: zarFormatted, local: localFormatted, localCurrency };
+    }).format(usdAmount);
   };
 
   return (
@@ -264,12 +147,6 @@ export default function Pricing() {
               Current balance: {user.credits || 0} credits
             </p>
           )}
-          {currencyInfo && !currencyLoading && (
-            <p className="text-xs text-slate-500 mt-2 flex items-center justify-center gap-1" data-testid="text-detected-location">
-              <Globe className="h-3 w-3" />
-              Showing prices in {currencyInfo.code} ({currencyInfo.country})
-            </p>
-          )}
         </motion.div>
 
         {isLoading ? (
@@ -286,7 +163,6 @@ export default function Pricing() {
           <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
             {packages.map((pkg, index) => {
               const isPopular = pkg.name === "Pro";
-              const price = formatPrice(pkg.priceZar);
 
               return (
                 <motion.div
@@ -321,14 +197,12 @@ export default function Pricing() {
                     </CardHeader>
                     <CardContent className="text-center">
                       <div className="mb-6">
-                        <span className="text-4xl font-bold text-white">
-                          {price.zar}
+                        <span className="text-4xl font-bold text-white" data-testid={`text-price-${pkg.id}`}>
+                          {formatPriceUSD(pkg.priceZar)}
                         </span>
-                        {price.local && (
-                          <p className="text-sm text-slate-400 mt-1" data-testid={`text-local-price-${pkg.id}`}>
-                            ~{price.local} {price.localCurrency}
-                          </p>
-                        )}
+                        <p className="text-sm text-slate-500 mt-1">
+                          USD
+                        </p>
                       </div>
                       <ul className="space-y-3 text-left">
                         <li className="flex items-center gap-3">
@@ -398,11 +272,6 @@ export default function Pricing() {
               Contact us
             </a>
           </p>
-          {currencyInfo && (
-            <p className="mt-2 text-xs text-slate-500">
-              * Local currency shown is approximate. Payment processed in ZAR.
-            </p>
-          )}
         </motion.div>
       </div>
     </div>
