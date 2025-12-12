@@ -8,10 +8,16 @@ import {
   type InsertSystemConfig,
   type UsageTracking,
   type InsertUsageTracking,
+  type CreditPackage,
+  type InsertCreditPackage,
+  type Transaction,
+  type InsertTransaction,
   users,
   analyses,
   systemConfig,
   usageTracking,
+  creditPackages,
+  transactions,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc } from "drizzle-orm";
@@ -38,6 +44,14 @@ export interface IStorage {
   getUserUsageToday(userId: string): Promise<UsageTracking | undefined>;
   createUsageTracking(usage: InsertUsageTracking): Promise<UsageTracking>;
   incrementUsageCount(userId: string, date: string): Promise<UsageTracking>;
+
+  getCreditPackages(): Promise<CreditPackage[]>;
+  getCreditPackage(id: string): Promise<CreditPackage | undefined>;
+  createCreditPackage(pkg: InsertCreditPackage): Promise<CreditPackage>;
+  
+  createTransaction(tx: InsertTransaction): Promise<Transaction>;
+  getTransactionByReference(reference: string): Promise<Transaction | undefined>;
+  updateTransactionStatus(id: string, status: string): Promise<Transaction | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -179,6 +193,35 @@ export class DatabaseStorage implements IStorage {
     if ((user.credits || 0) < 1) return { success: false, error: 'Insufficient credits' };
     const [updated] = await db.update(users).set({ credits: user.credits - 1, updatedAt: new Date() }).where(eq(users.id, userId)).returning();
     return { success: true, user: updated };
+  }
+
+  async getCreditPackages(): Promise<CreditPackage[]> {
+    return await db.select().from(creditPackages).where(eq(creditPackages.isActive, true));
+  }
+
+  async getCreditPackage(id: string): Promise<CreditPackage | undefined> {
+    const [pkg] = await db.select().from(creditPackages).where(eq(creditPackages.id, id));
+    return pkg || undefined;
+  }
+
+  async createCreditPackage(insertPkg: InsertCreditPackage): Promise<CreditPackage> {
+    const [pkg] = await db.insert(creditPackages).values(insertPkg).returning();
+    return pkg;
+  }
+
+  async createTransaction(insertTx: InsertTransaction): Promise<Transaction> {
+    const [tx] = await db.insert(transactions).values(insertTx).returning();
+    return tx;
+  }
+
+  async getTransactionByReference(reference: string): Promise<Transaction | undefined> {
+    const [tx] = await db.select().from(transactions).where(eq(transactions.paystackReference, reference));
+    return tx || undefined;
+  }
+
+  async updateTransactionStatus(id: string, status: string): Promise<Transaction | undefined> {
+    const [tx] = await db.update(transactions).set({ status }).where(eq(transactions.id, id)).returning();
+    return tx || undefined;
   }
 }
 

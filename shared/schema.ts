@@ -89,3 +89,40 @@ export const insertUsageTrackingSchema = createInsertSchema(usageTracking).omit(
 
 export type InsertUsageTracking = z.infer<typeof insertUsageTrackingSchema>;
 export type UsageTracking = typeof usageTracking.$inferSelect;
+
+// Credit packages for purchase
+export const creditPackages = pgTable("credit_packages", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: varchar("name").notNull(),
+  credits: integer("credits").notNull(),
+  priceZar: integer("price_zar").notNull(),
+  description: text("description"),
+  isActive: boolean("is_active").notNull().default(true),
+});
+
+export const insertCreditPackageSchema = createInsertSchema(creditPackages).omit({
+  id: true,
+});
+
+export type InsertCreditPackage = z.infer<typeof insertCreditPackageSchema>;
+export type CreditPackage = typeof creditPackages.$inferSelect;
+
+// Payment transactions
+export const transactions = pgTable("transactions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  packageId: varchar("package_id").references(() => creditPackages.id),
+  amount: integer("amount").notNull(),
+  credits: integer("credits").notNull(),
+  status: varchar("status").notNull().default("pending"),
+  paystackReference: varchar("paystack_reference").unique(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertTransactionSchema = createInsertSchema(transactions).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertTransaction = z.infer<typeof insertTransactionSchema>;
+export type Transaction = typeof transactions.$inferSelect;

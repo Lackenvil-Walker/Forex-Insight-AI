@@ -6,6 +6,9 @@ import { sendVerificationEmail } from "./email";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
 
+const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY;
+const PAYSTACK_BASE_URL = 'https://api.paystack.co';
+
 const GUEST_USER_ID = "guest-user";
 const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || '').split(',').map(e => e.trim().toLowerCase()).filter(Boolean);
 
@@ -434,6 +437,188 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error updating user credits:", error);
       res.status(500).json({ error: 'Failed to update user credits' });
+    }
+  });
+
+  // Credit packages routes
+  app.get('/api/credit-packages', async (req, res) => {
+    try {
+      const packages = await storage.getCreditPackages();
+      
+      // Seed default packages if none exist
+      if (packages.length === 0) {
+        const defaultPackages = [
+          { name: 'Starter', credits: 10, priceZar: 5000, description: '10 chart analyses' },
+          { name: 'Pro', credits: 50, priceZar: 20000, description: '50 chart analyses - Best value!' },
+          { name: 'Enterprise', credits: 200, priceZar: 60000, description: '200 chart analyses for serious traders' },
+        ];
+        
+        for (const pkg of defaultPackages) {
+          await storage.createCreditPackage(pkg);
+        }
+        
+        const seededPackages = await storage.getCreditPackages();
+        return res.json(seededPackages);
+      }
+      
+      res.json(packages);
+    } catch (error) {
+      console.error("Error fetching credit packages:", error);
+      res.status(500).json({ error: 'Failed to fetch credit packages' });
+    }
+  });
+
+  // Paystack payment routes
+  app.post('/api/paystack/initialize', requireAuth, async (req: any, res) => {
+    try {
+      if (!PAYSTACK_SECRET_KEY) {
+        return res.status(500).json({ error: 'Payment system not configured' });
+      }
+
+      const { packageId } = req.body;
+      const userId = req.session.userId;
+
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+
+      const creditPackage = await storage.getCreditPackage(packageId);
+      if (!creditPackage) {
+        return res.status(404).json({ error: 'Package not found' });
+      }
+
+      const reference = `txn_${Date.now()}_${crypto.randomBytes(8).toString('hex')}`;
+      
+      // Create transaction record
+      await storage.createTransaction({
+        userId,
+        packageId,
+        amount: creditPackage.priceZar,
+        credits: creditPackage.credits,
+        status: 'pending',
+        paystackReference: reference,
+      });
+
+      // Initialize Paystack transaction
+      const response = await fetch(`${PAYSTACK_BASE_URL}/transaction/initialize`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${PAYSTACK_SECRET_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: user.email,
+          amount: creditPackage.priceZar, // Already in kobo/cents
+          reference,
+          metadata: {
+            userId,
+            packageId,
+            credits: creditPackage.credits,
+          },
+          callback_url: `${req.protocol}://${req.get('host')}/pricing?reference=${reference}`,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!data.status) {
+        console.error('Paystack initialization failed:', data);
+        return res.status(500).json({ error: data.message || 'Payment initialization failed' });
+      }
+
+      res.json({
+        authorization_url: data.data.authorization_url,
+        access_code: data.data.access_code,
+        reference: data.data.reference,
+      });
+    } catch (error: any) {
+      console.error("Error initializing payment:", error);
+      res.status(500).json({ error: 'Failed to initialize payment' });
+    }
+  });
+
+  app.get('/api/paystack/verify/:reference', requireAuth, async (req: any, res) => {
+    try {
+      if (!PAYSTACK_SECRET_KEY) {
+        return res.status(500).json({ error: 'Payment system not configured' });
+      }
+
+      const { reference } = req.params;
+      const userId = req.session.userId;
+
+      // Check if transaction exists and belongs to user
+      const transaction = await storage.getTransactionByReference(reference);
+      if (!transaction) {
+        return res.status(404).json({ error: 'Transaction not found' });
+      }
+
+      if (transaction.userId !== userId) {
+        return res.status(403).json({ error: 'Unauthorized' });
+      }
+
+      if (transaction.status === 'success') {
+        return res.json({ status: 'success', message: 'Payment already verified', credits: transaction.credits });
+      }
+
+      // Verify with Paystack
+      const response = await fetch(`${PAYSTACK_BASE_URL}/transaction/verify/${reference}`, {
+        headers: {
+          'Authorization': `Bearer ${PAYSTACK_SECRET_KEY}`,
+        },
+      });
+
+      const data = await response.json();
+
+      if (!data.status || data.data.status !== 'success') {
+        await storage.updateTransactionStatus(transaction.id, 'failed');
+        return res.status(400).json({ error: 'Payment verification failed' });
+      }
+
+      // Update transaction and add credits
+      await storage.updateTransactionStatus(transaction.id, 'success');
+      await storage.addCredits(userId, transaction.credits);
+
+      res.json({ 
+        status: 'success', 
+        message: 'Payment verified successfully', 
+        credits: transaction.credits 
+      });
+    } catch (error: any) {
+      console.error("Error verifying payment:", error);
+      res.status(500).json({ error: 'Failed to verify payment' });
+    }
+  });
+
+  // Paystack webhook for automatic verification
+  app.post('/api/paystack/webhook', async (req, res) => {
+    try {
+      const hash = crypto
+        .createHmac('sha512', PAYSTACK_SECRET_KEY || '')
+        .update(JSON.stringify(req.body))
+        .digest('hex');
+
+      if (hash !== req.headers['x-paystack-signature']) {
+        return res.status(400).json({ error: 'Invalid signature' });
+      }
+
+      const event = req.body;
+
+      if (event.event === 'charge.success') {
+        const { reference } = event.data;
+        
+        const transaction = await storage.getTransactionByReference(reference);
+        if (transaction && transaction.status === 'pending') {
+          await storage.updateTransactionStatus(transaction.id, 'success');
+          await storage.addCredits(transaction.userId, transaction.credits);
+          console.log(`Webhook: Added ${transaction.credits} credits to user ${transaction.userId}`);
+        }
+      }
+
+      res.sendStatus(200);
+    } catch (error) {
+      console.error("Webhook error:", error);
+      res.sendStatus(500);
     }
   });
 

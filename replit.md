@@ -6,7 +6,7 @@ ForexAI is a full-stack web application that provides AI-powered forex chart ana
 
 ## Recent Changes
 
-- **December 12, 2025**: Removed Stripe integration (not available in South Africa). Credits are now managed manually by admins via the admin panel. Users contact admin to purchase credits.
+- **December 12, 2025**: Removed Stripe integration (not available in South Africa). Added Paystack payment gateway for credit purchases in ZAR. Users can now buy credit packages directly through the Pricing page.
 
 ## User Preferences
 
