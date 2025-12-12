@@ -109,11 +109,22 @@ export default function Pricing() {
   };
 
   const formatPrice = (priceInCents: number) => {
-    return new Intl.NumberFormat("en-ZA", {
+    const zarAmount = priceInCents / 100;
+    const zarFormatted = new Intl.NumberFormat("en-ZA", {
       style: "currency",
       currency: "ZAR",
       minimumFractionDigits: 0,
-    }).format(priceInCents / 100);
+    }).format(zarAmount);
+    
+    // Approximate USD conversion (1 USD ≈ 18 ZAR)
+    const usdAmount = zarAmount / 18;
+    const usdFormatted = new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+      minimumFractionDigits: 0,
+    }).format(usdAmount);
+    
+    return { zar: zarFormatted, usd: usdFormatted };
   };
 
   return (
@@ -196,8 +207,11 @@ export default function Pricing() {
                     <CardContent className="text-center">
                       <div className="mb-6">
                         <span className="text-4xl font-bold text-white">
-                          {formatPrice(pkg.priceZar)}
+                          {formatPrice(pkg.priceZar).zar}
                         </span>
+                        <p className="text-sm text-slate-400 mt-1">
+                          ~{formatPrice(pkg.priceZar).usd} USD
+                        </p>
                       </div>
                       <ul className="space-y-3 text-left">
                         <li className="flex items-center gap-3">
