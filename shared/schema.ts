@@ -29,6 +29,7 @@ export const users = pgTable("users", {
   plan: text("plan").notNull().default("starter"),
   stripeCustomerId: text("stripe_customer_id"),
   stripeSubscriptionId: text("stripe_subscription_id"),
+  credits: integer("credits").notNull().default(0),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

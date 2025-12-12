@@ -245,6 +245,7 @@ export async function registerRoutes(
             lastName: user.lastName,
             role: user.role,
             plan: user.plan,
+            credits: user.credits,
             emailVerified: user.emailVerified,
             profileImageUrl: user.profileImageUrl,
           });
@@ -259,6 +260,7 @@ export async function registerRoutes(
         lastName: user.lastName,
         role: user.role,
         plan: user.plan,
+        credits: user.credits,
         isGuest: true,
       });
     } catch (error) {
@@ -281,11 +283,8 @@ export async function registerRoutes(
         return res.status(404).json({ error: 'User not found' });
       }
 
-      const today = new Date().toISOString().split('T')[0];
-      const usage = await storage.getUserUsageToday(userId);
-
-      if (user.plan === 'starter' && usage && usage.analysisCount >= 1) {
-        return res.status(402).json({ error: 'Daily limit reached. Please upgrade your plan.' });
+      if ((user.credits || 0) < 1) {
+        return res.status(402).json({ error: 'No credits remaining. Please purchase credits to continue.', needsCredits: true });
       }
 
       let config = await storage.getSystemConfig();
@@ -310,7 +309,7 @@ export async function registerRoutes(
         result: analysisResult
       });
 
-      await storage.incrementUsageCount(userId, today);
+      await storage.deductCredit(userId);
 
       res.json(analysis);
     } catch (error: any) {
@@ -405,6 +404,122 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error updating config:", error);
       res.status(500).json({ error: 'Failed to update config' });
+    }
+  });
+
+  app.post('/api/admin/users/:userId/credits', requireAdmin, async (req, res) => {
+    try {
+      const { userId } = req.params;
+      const { amount, action } = req.body;
+
+      if (typeof amount !== 'number' || amount < 1) {
+        return res.status(400).json({ error: 'Amount must be a positive number' });
+      }
+
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+
+      let updatedUser;
+      if (action === 'add') {
+        updatedUser = await storage.addCredits(userId, amount);
+      } else if (action === 'remove') {
+        const newCredits = Math.max(0, (user.credits || 0) - amount);
+        updatedUser = await storage.updateUser(userId, { credits: newCredits });
+      } else {
+        return res.status(400).json({ error: 'Action must be "add" or "remove"' });
+      }
+
+      res.json(updatedUser);
+    } catch (error) {
+      console.error("Error updating user credits:", error);
+      res.status(500).json({ error: 'Failed to update user credits' });
+    }
+  });
+
+  app.post('/api/credits/checkout', async (req: any, res) => {
+    try {
+      const userId = getUserId(req);
+      if (!isAuthenticated(req)) {
+        return res.status(401).json({ error: 'Authentication required to purchase credits' });
+      }
+
+      let user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+
+      const stripe = await getUncachableStripeClient();
+
+      let customerId = user?.stripeCustomerId;
+      if (!customerId) {
+        const customer = await stripe.customers.create({
+          email: user?.email || undefined,
+          metadata: { userId },
+        });
+        await storage.updateUserStripeInfo(userId, { stripeCustomerId: customer.id });
+        customerId = customer.id;
+      }
+
+      const session = await stripe.checkout.sessions.create({
+        customer: customerId,
+        payment_method_types: ['card'],
+        line_items: [{
+          price_data: {
+            currency: 'usd',
+            product_data: {
+              name: '5 Analysis Credits',
+              description: 'Get 5 AI-powered forex chart analyses',
+            },
+            unit_amount: 2000,
+          },
+          quantity: 1,
+        }],
+        mode: 'payment',
+        success_url: `${req.protocol}://${req.get('host')}/dashboard?credits_purchased=true`,
+        cancel_url: `${req.protocol}://${req.get('host')}/dashboard?canceled=true`,
+        metadata: {
+          userId,
+          creditsPurchase: 'true',
+          creditsAmount: '5',
+        },
+      });
+
+      res.json({ url: session.url });
+    } catch (error) {
+      console.error("Error creating credits checkout:", error);
+      res.status(500).json({ error: 'Failed to create checkout session' });
+    }
+  });
+
+  app.post('/api/stripe/webhook/credits', async (req: any, res) => {
+    try {
+      const stripe = await getUncachableStripeClient();
+      const sig = req.headers['stripe-signature'];
+      
+      let event;
+      try {
+        event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET || '');
+      } catch (err: any) {
+        console.error('Webhook signature verification failed:', err.message);
+        return res.status(400).send(`Webhook Error: ${err.message}`);
+      }
+
+      if (event.type === 'checkout.session.completed') {
+        const session = event.data.object as any;
+        if (session.metadata?.creditsPurchase === 'true') {
+          const userId = session.metadata.userId;
+          const creditsAmount = parseInt(session.metadata.creditsAmount || '5', 10);
+          await storage.addCredits(userId, creditsAmount);
+          console.log(`Added ${creditsAmount} credits to user ${userId}`);
+        }
+      }
+
+      res.json({ received: true });
+    } catch (error) {
+      console.error("Error processing credits webhook:", error);
+      res.status(500).json({ error: 'Webhook processing failed' });
     }
   });
 

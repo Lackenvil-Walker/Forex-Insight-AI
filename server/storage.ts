@@ -25,6 +25,8 @@ export interface IStorage {
   updateUser(id: string, updates: Partial<UpsertUser>): Promise<User | undefined>;
   getAllUsers(): Promise<User[]>;
   updateUserStripeInfo(userId: string, stripeInfo: { stripeCustomerId?: string; stripeSubscriptionId?: string }): Promise<User | undefined>;
+  addCredits(userId: string, amount: number): Promise<User | undefined>;
+  deductCredit(userId: string): Promise<{ success: boolean; user?: User; error?: string }>;
   
   createAnalysis(analysis: InsertAnalysis): Promise<Analysis>;
   getAnalysis(id: string): Promise<Analysis | undefined>;
@@ -175,6 +177,22 @@ export class DatabaseStorage implements IStorage {
   async updateUserStripeInfo(userId: string, stripeInfo: { stripeCustomerId?: string; stripeSubscriptionId?: string }): Promise<User | undefined> {
     const [user] = await db.update(users).set(stripeInfo).where(eq(users.id, userId)).returning();
     return user || undefined;
+  }
+
+  async addCredits(userId: string, amount: number): Promise<User | undefined> {
+    const user = await this.getUser(userId);
+    if (!user) return undefined;
+    const newCredits = (user.credits || 0) + amount;
+    const [updated] = await db.update(users).set({ credits: newCredits, updatedAt: new Date() }).where(eq(users.id, userId)).returning();
+    return updated || undefined;
+  }
+
+  async deductCredit(userId: string): Promise<{ success: boolean; user?: User; error?: string }> {
+    const user = await this.getUser(userId);
+    if (!user) return { success: false, error: 'User not found' };
+    if ((user.credits || 0) < 1) return { success: false, error: 'Insufficient credits' };
+    const [updated] = await db.update(users).set({ credits: user.credits - 1, updatedAt: new Date() }).where(eq(users.id, userId)).returning();
+    return { success: true, user: updated };
   }
 
   async getProduct(productId: string): Promise<any> {
