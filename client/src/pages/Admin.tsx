@@ -13,11 +13,18 @@ import { Switch as SwitchUI } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Users, DollarSign, Activity, AlertCircle, Save, CheckCircle2, XCircle, Loader2, Key } from 'lucide-react';
+import { Users, DollarSign, Activity, AlertCircle, Save, CheckCircle2, XCircle, Loader2, Key, Plus, Minus, Coins } from 'lucide-react';
 import { toast } from "sonner";
 import { formatDistanceToNow } from 'date-fns';
+import { queryClient } from '@/lib/queryClient';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
 function AdminHome() {
+  const [selectedUser, setSelectedUser] = useState<any>(null);
+  const [creditsAmount, setCreditsAmount] = useState<string>('5');
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [creditsAction, setCreditsAction] = useState<'add' | 'remove'>('add');
+
   const { data: users, isLoading, error } = useQuery({
     queryKey: ['admin-users'],
     queryFn: async () => {
@@ -38,6 +45,54 @@ function AdminHome() {
       return response.json();
     },
   });
+
+  const creditsMutation = useMutation({
+    mutationFn: async ({ userId, amount, action }: { userId: string; amount: number; action: 'add' | 'remove' }) => {
+      const response = await fetch(`/api/admin/users/${userId}/credits`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount, action }),
+        credentials: 'include'
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update credits');
+      }
+
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-users'] });
+      setDialogOpen(false);
+      setSelectedUser(null);
+      setCreditsAmount('5');
+      toast.success("Credits Updated", {
+        description: `Successfully ${creditsAction === 'add' ? 'added' : 'removed'} credits.`
+      });
+    },
+    onError: (error: Error) => {
+      toast.error("Failed to Update Credits", {
+        description: error.message
+      });
+    }
+  });
+
+  const handleCreditsSubmit = () => {
+    if (!selectedUser) return;
+    const amount = parseInt(creditsAmount) || 0;
+    if (amount <= 0) {
+      toast.error("Invalid Amount", { description: "Please enter a positive number." });
+      return;
+    }
+    creditsMutation.mutate({ userId: selectedUser.id, amount, action: creditsAction });
+  };
+
+  const openCreditsDialog = (user: any, action: 'add' | 'remove') => {
+    setSelectedUser(user);
+    setCreditsAction(action);
+    setCreditsAmount('5');
+    setDialogOpen(true);
+  };
 
   if (error) {
     if (error.message === 'FORBIDDEN') {
@@ -117,11 +172,49 @@ function AdminHome() {
               <p className="text-muted-foreground">No users found</p>
             </div>
           ) : (
-            <Table>
+            <>
+              <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>{creditsAction === 'add' ? 'Add' : 'Remove'} Credits</DialogTitle>
+                    <DialogDescription>
+                      {creditsAction === 'add' ? 'Add' : 'Remove'} credits for {selectedUser?.firstName} {selectedUser?.lastName} ({selectedUser?.email})
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="py-4">
+                    <Label htmlFor="credits-amount">Number of Credits</Label>
+                    <Input
+                      id="credits-amount"
+                      type="number"
+                      min="1"
+                      value={creditsAmount}
+                      onChange={(e) => setCreditsAmount(e.target.value)}
+                      className="mt-2"
+                      data-testid="input-credits-amount"
+                    />
+                  </div>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setDialogOpen(false)} data-testid="button-cancel-credits">
+                      Cancel
+                    </Button>
+                    <Button 
+                      onClick={handleCreditsSubmit} 
+                      disabled={creditsMutation.isPending}
+                      data-testid="button-confirm-credits"
+                    >
+                      {creditsMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                      {creditsAction === 'add' ? 'Add' : 'Remove'} Credits
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+
+              <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Name</TableHead>
                   <TableHead>Email</TableHead>
+                  <TableHead>Credits</TableHead>
                   <TableHead>Plan</TableHead>
                   <TableHead>Role</TableHead>
                   <TableHead>Joined</TableHead>
@@ -137,6 +230,32 @@ function AdminHome() {
                     <TableRow key={user.id} data-testid={`row-user-${user.id}`}>
                       <TableCell className="font-medium" data-testid={`text-name-${user.id}`}>{fullName}</TableCell>
                       <TableCell data-testid={`text-email-${user.id}`}>{user.email || 'N/A'}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline" className="flex items-center gap-1" data-testid={`badge-credits-${user.id}`}>
+                            <Coins className="w-3 h-3" />
+                            {user.credits || 0}
+                          </Badge>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-6 w-6"
+                            onClick={() => openCreditsDialog(user, 'add')}
+                            data-testid={`button-add-credits-${user.id}`}
+                          >
+                            <Plus className="w-3 h-3" />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-6 w-6"
+                            onClick={() => openCreditsDialog(user, 'remove')}
+                            data-testid={`button-remove-credits-${user.id}`}
+                          >
+                            <Minus className="w-3 h-3" />
+                          </Button>
+                        </div>
+                      </TableCell>
                       <TableCell>
                         <Badge variant="outline" className={user.plan === 'pro' ? 'border-primary text-primary' : ''} data-testid={`badge-plan-${user.id}`}>
                           {user.plan}
@@ -155,7 +274,8 @@ function AdminHome() {
                   );
                 })}
               </TableBody>
-            </Table>
+              </Table>
+            </>
           )}
         </CardContent>
       </Card>

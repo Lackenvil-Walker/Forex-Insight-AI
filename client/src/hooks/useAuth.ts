@@ -8,6 +8,7 @@ interface User {
   profileImageUrl: string | null;
   role: string;
   plan: string;
+  credits: number;
   emailVerified?: boolean;
   isGuest?: boolean;
 }
