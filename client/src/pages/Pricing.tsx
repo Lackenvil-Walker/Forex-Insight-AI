@@ -102,7 +102,7 @@ export default function Pricing() {
 
   const handlePurchase = (packageId: string) => {
     if (!user || user.isGuest) {
-      setLocation("/auth");
+      setLocation("/login");
       return;
     }
     initializeMutation.mutate(packageId);
