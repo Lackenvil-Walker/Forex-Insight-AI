@@ -3,34 +3,37 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { analyzeForexChart } from "./openai";
 import { getUncachableStripeClient, getStripePublishableKey } from "./stripeClient";
+import { sendVerificationEmail } from "./email";
+import bcrypt from "bcryptjs";
+import crypto from "crypto";
 
 const GUEST_USER_ID = "guest-user";
 const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || '').split(',').map(e => e.trim().toLowerCase()).filter(Boolean);
 
 function getUserId(req: any): string {
-  if (req.isAuthenticated?.() && req.user?.claims?.sub) {
-    return req.user.claims.sub;
+  if (req.session?.userId) {
+    return req.session.userId;
   }
   return GUEST_USER_ID;
 }
 
-function isAdmin(req: any): boolean {
-  if (!req.isAuthenticated?.()) return false;
-  const email = req.user?.claims?.email?.toLowerCase();
-  return ADMIN_EMAILS.includes(email);
+function isAuthenticated(req: any): boolean {
+  return !!req.session?.userId;
 }
 
+const requireAuth: RequestHandler = async (req: any, res, next) => {
+  if (!req.session?.userId) {
+    return res.status(401).json({ error: 'Authentication required' });
+  }
+  next();
+};
+
 const requireAdmin: RequestHandler = async (req: any, res, next) => {
-  if (!req.isAuthenticated?.()) {
+  if (!req.session?.userId) {
     return res.status(401).json({ error: 'Authentication required' });
   }
   
-  const userId = req.user?.claims?.sub;
-  if (!userId) {
-    return res.status(401).json({ error: 'Authentication required' });
-  }
-  
-  const user = await storage.getUser(userId);
+  const user = await storage.getUser(req.session.userId);
   if (!user || user.role !== 'admin') {
     return res.status(403).json({ error: 'Admin access required' });
   }
@@ -49,6 +52,7 @@ export async function registerRoutes(
       user = await storage.upsertUser({
         id: GUEST_USER_ID,
         email: 'guest@forexai.app',
+        passwordHash: '',
         firstName: 'Guest',
         lastName: 'User',
         profileImageUrl: null,
@@ -57,18 +61,206 @@ export async function registerRoutes(
     return user;
   }
 
+  // Auth routes
+  app.post('/api/auth/signup', async (req, res) => {
+    try {
+      const { email, password, firstName, lastName } = req.body;
+
+      if (!email || !password) {
+        return res.status(400).json({ error: 'Email and password are required' });
+      }
+
+      if (password.length < 8) {
+        return res.status(400).json({ error: 'Password must be at least 8 characters' });
+      }
+
+      const existingUser = await storage.getUserByEmail(email.toLowerCase());
+      if (existingUser) {
+        return res.status(400).json({ error: 'Email already registered' });
+      }
+
+      const passwordHash = await bcrypt.hash(password, 10);
+      const verificationToken = crypto.randomBytes(32).toString('hex');
+      const verificationTokenExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+
+      const isAdmin = ADMIN_EMAILS.includes(email.toLowerCase());
+
+      const user = await storage.createUser({
+        email: email.toLowerCase(),
+        passwordHash,
+        firstName: firstName || null,
+        lastName: lastName || null,
+        emailVerified: false,
+        verificationToken,
+        verificationTokenExpires,
+        role: isAdmin ? 'admin' : 'user',
+      });
+
+      // Send verification email
+      await sendVerificationEmail(email, verificationToken);
+
+      res.json({ 
+        message: 'Account created. Please check your email to verify your account.',
+        requiresVerification: true 
+      });
+    } catch (error: any) {
+      console.error('Signup error:', error);
+      res.status(500).json({ error: 'Failed to create account' });
+    }
+  });
+
+  app.post('/api/auth/login', async (req: any, res) => {
+    try {
+      const { email, password } = req.body;
+
+      if (!email || !password) {
+        return res.status(400).json({ error: 'Email and password are required' });
+      }
+
+      const user = await storage.getUserByEmail(email.toLowerCase());
+      if (!user || !user.passwordHash) {
+        return res.status(401).json({ error: 'Invalid email or password' });
+      }
+
+      const validPassword = await bcrypt.compare(password, user.passwordHash);
+      if (!validPassword) {
+        return res.status(401).json({ error: 'Invalid email or password' });
+      }
+
+      if (!user.emailVerified) {
+        return res.status(403).json({ 
+          error: 'Please verify your email before logging in',
+          requiresVerification: true 
+        });
+      }
+
+      // Regenerate session to prevent fixation attacks
+      req.session.regenerate((err: any) => {
+        if (err) {
+          console.error('Session regeneration error:', err);
+          return res.status(500).json({ error: 'Failed to log in' });
+        }
+        
+        req.session.userId = user.id;
+        
+        res.json({ 
+          id: user.id,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          role: user.role,
+          plan: user.plan,
+          emailVerified: user.emailVerified,
+        });
+      });
+    } catch (error: any) {
+      console.error('Login error:', error);
+      res.status(500).json({ error: 'Failed to log in' });
+    }
+  });
+
+  app.post('/api/auth/logout', (req: any, res) => {
+    req.session.destroy((err: any) => {
+      if (err) {
+        console.error('Logout error:', err);
+        return res.status(500).json({ error: 'Failed to log out' });
+      }
+      res.json({ message: 'Logged out successfully' });
+    });
+  });
+
+  app.post('/api/auth/verify-email', async (req, res) => {
+    try {
+      const { token } = req.body;
+
+      if (!token) {
+        return res.status(400).json({ error: 'Verification token is required' });
+      }
+
+      const user = await storage.getUserByVerificationToken(token);
+      if (!user) {
+        return res.status(400).json({ error: 'Invalid or expired verification token' });
+      }
+
+      if (user.verificationTokenExpires && new Date() > user.verificationTokenExpires) {
+        return res.status(400).json({ error: 'Verification token has expired' });
+      }
+
+      await storage.updateUser(user.id, {
+        emailVerified: true,
+        verificationToken: null,
+        verificationTokenExpires: null,
+      });
+
+      res.json({ message: 'Email verified successfully. You can now log in.' });
+    } catch (error: any) {
+      console.error('Verify email error:', error);
+      res.status(500).json({ error: 'Failed to verify email' });
+    }
+  });
+
+  app.post('/api/auth/resend-verification', async (req, res) => {
+    try {
+      const { email } = req.body;
+
+      if (!email) {
+        return res.status(400).json({ error: 'Email is required' });
+      }
+
+      const user = await storage.getUserByEmail(email.toLowerCase());
+      if (!user) {
+        return res.json({ message: 'If an account exists, a verification email will be sent.' });
+      }
+
+      if (user.emailVerified) {
+        return res.json({ message: 'Email is already verified. You can log in.' });
+      }
+
+      const verificationToken = crypto.randomBytes(32).toString('hex');
+      const verificationTokenExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
+      await storage.updateUser(user.id, {
+        verificationToken,
+        verificationTokenExpires,
+      });
+
+      await sendVerificationEmail(email, verificationToken);
+
+      res.json({ message: 'If an account exists, a verification email will be sent.' });
+    } catch (error: any) {
+      console.error('Resend verification error:', error);
+      res.status(500).json({ error: 'Failed to resend verification email' });
+    }
+  });
+
   app.get('/api/auth/user', async (req: any, res) => {
     try {
-      if (req.isAuthenticated?.() && req.user?.claims?.sub) {
-        const userId = req.user.claims.sub;
-        let user = await storage.getUser(userId);
+      if (req.session?.userId) {
+        const user = await storage.getUser(req.session.userId);
         if (user) {
-          res.json(user);
+          res.json({
+            id: user.id,
+            email: user.email,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            role: user.role,
+            plan: user.plan,
+            emailVerified: user.emailVerified,
+            profileImageUrl: user.profileImageUrl,
+          });
           return;
         }
       }
       const user = await ensureGuestUser();
-      res.json(user);
+      res.json({
+        id: user.id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        role: user.role,
+        plan: user.plan,
+        isGuest: true,
+      });
     } catch (error) {
       console.error("Error fetching user:", error);
       res.status(500).json({ message: "Failed to fetch user" });

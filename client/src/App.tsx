@@ -8,11 +8,17 @@ import Landing from "@/pages/Landing";
 import Dashboard from "@/pages/Dashboard";
 import Admin from "@/pages/Admin";
 import Pricing from "@/pages/Pricing";
+import Login from "@/pages/Login";
+import Signup from "@/pages/Signup";
+import VerifyEmail from "@/pages/VerifyEmail";
 
 function Router() {
   return (
     <Switch>
       <Route path="/" component={Landing} />
+      <Route path="/login" component={Login} />
+      <Route path="/signup" component={Signup} />
+      <Route path="/verify-email" component={VerifyEmail} />
       <Route path="/pricing" component={Pricing} />
       <Route path="/dashboard" component={Dashboard} />
       <Route path="/dashboard/*" component={Dashboard} />

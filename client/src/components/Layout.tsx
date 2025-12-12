@@ -74,20 +74,21 @@ export function Layout({ children, isAdminLayout = false }: LayoutProps) {
             </div>
           </div>
           {isGuest ? (
-            <Button 
-              variant="outline" 
-              className="w-full justify-start gap-2 text-muted-foreground hover:text-foreground border-dashed"
-              onClick={login}
-              data-testid="button-login"
-            >
-              <LogIn className="w-4 h-4" />
-              Sign In with Replit
-            </Button>
+            <Link href="/login">
+              <Button 
+                variant="outline" 
+                className="w-full justify-start gap-2 text-muted-foreground hover:text-foreground border-dashed"
+                data-testid="button-login"
+              >
+                <LogIn className="w-4 h-4" />
+                Sign In
+              </Button>
+            </Link>
           ) : (
             <Button 
               variant="outline" 
               className="w-full justify-start gap-2 text-muted-foreground hover:text-foreground border-dashed"
-              onClick={logout}
+              onClick={() => logout()}
               data-testid="button-logout"
             >
               <LogOut className="w-4 h-4" />

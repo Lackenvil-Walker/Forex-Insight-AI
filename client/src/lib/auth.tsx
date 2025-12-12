@@ -16,9 +16,5 @@ export function useAuth() {
   return {
     ...authData,
     user,
-    isAdmin: authData.isAdmin,
-    isGuest: authData.isGuest,
-    login: authData.login,
-    logout: authData.logout,
   };
 }

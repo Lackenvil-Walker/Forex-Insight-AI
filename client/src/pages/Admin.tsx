@@ -408,20 +408,20 @@ function AdminSettings() {
 }
 
 export default function Admin() {
-  const { isAdmin, isLoading, isGuest, login } = useAuth();
+  const { isAdmin, isLoading, isGuest } = useAuth();
   const [, navigate] = useLocation();
   
   useEffect(() => {
     if (!isLoading) {
       if (isGuest) {
-        login();
+        navigate('/login');
         return;
       }
       if (!isAdmin) {
         navigate('/dashboard');
       }
     }
-  }, [isAdmin, isLoading, isGuest, navigate, login]);
+  }, [isAdmin, isLoading, isGuest, navigate]);
   
   if (isLoading) {
     return (
