@@ -1,0 +1,27 @@
+Log
+POST /emails
+
+Endpoint
+/emails
+Date
+4 minutes ago
+Status
+Method
+POST
+User-Agent
+resend-node:4.0.0
+Response Body
+{
+  "id": "66cca1b9-07c2-488b-8016-a0ad90d4ad48"
+}
+Request Body
+{
+  "bcc": [],
+  "cc": [],
+  "from": "ForexAI <noreply@silverock.co.za>",
+  "replyTo": [],
+  "subject": "Verify your ForexAI account",
+  "to": ["emmanuel@ucfoods.co.za"],
+  "html": "\n        <!DOCTYPE html>\n        <html>\n        <head>\n          <meta charset=\"utf-8\">\n          <title>Verify your email</title>\n        </head>\n        <body style=\"font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;\">\n          <div style=\"text-align: center; margin-bottom: 30px;\">\n            <h1 style=\"color: #0066ff; margin: 0;\">ForexAI</h1>\n            <p style=\"color: #666; margin-top: 5px;\">AI-Powered Trading Intelligence</p>\n          </div>\n          \n          <div style=\"background: #f8f9fa; border-radius: 8px; padding: 30px; margin-bottom: 20px;\">\n            <h2 style=\"margin-top: 0; color: #333;\">Verify your email address</h2>\n            <p style=\"color: #555; line-height: 1.6;\">\n              Thanks for signing up for ForexAI! Please click the button below to verify your email address and activate your account.\n            </p>\n            \n            <div style=\"text-align: center; margin: 30px 0;\">\n              <a href=\"https://d80566d5-f366-4e99-b5e9-9395b57e9ec1-00-2ln9il12jhwf8.janeway.replit.dev/verify-email?token=b712578abac8963173499c09af0ab48ff3dd29791f8275b552f37c3bff0c6754\" \n                 style=\"background: #0066ff; color: white; padding: 14px 28px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: 500;\">\n                Verify Email Address\n              </a>\n            </div>\n            \n            <p style=\"color: #888; font-size: 14px;\">\n              This link will expire in 24 hours. If you didn't create an account with ForexAI, you can safely ignore this email.\n            </p>\n            \n            <p style=\"color: #888; font-size: 14px; margin-top: 15px;\">\n              <strong>Note:</strong> If you don't see this email in your inbox, please check your spam or junk folder.\n            </p>\n          </div>\n          \n          <div style=\"text-align: center; color: #888; font-size: 12px;\">\n            <p>&copy; 2025 ForexAI. All rights reserved.</p>\n          </div>\n        </body>\n        </html>\n      ",
+  "text": "FOREXAI\n\nAI-Powered Trading Intelligence\n\n\nVERIFY YOUR EMAIL ADDRESS\n\nThanks for signing up for ForexAI! Please click the button below to verify your email address and activate your account.\n\nVerify Email Address https://d80566d5-f366-4e99-b5e9-9395b57e9ec1-00-2ln9il12jhwf8.janeway.replit.dev/verify-email?token=b712578abac8963173499c09af0ab48ff3dd29791f8275b552f37c3bff0c6754\n\nThis link will expire in 24 hours. If you didn't create an account with ForexAI, you can safely ignore this email.\n\nNote: If you don't see this email in your inbox, please check your spam or junk folder.\n\n© 2025 ForexAI. All rights reserved."
+}
