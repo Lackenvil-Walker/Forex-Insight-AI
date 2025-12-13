@@ -348,6 +348,66 @@ export async function registerRoutes(
     }
   });
 
+  // User profile update route
+  app.put('/api/auth/profile', requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.session.userId;
+      const { firstName, lastName, email, currentPassword, newPassword } = req.body;
+
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+
+      const updates: any = {};
+
+      if (firstName !== undefined) updates.firstName = firstName;
+      if (lastName !== undefined) updates.lastName = lastName;
+
+      // Handle email change
+      if (email && email.toLowerCase() !== user.email) {
+        const existingUser = await storage.getUserByEmail(email.toLowerCase());
+        if (existingUser) {
+          return res.status(400).json({ error: 'Email already in use' });
+        }
+        updates.email = email.toLowerCase();
+      }
+
+      // Handle password change
+      if (newPassword) {
+        if (!currentPassword) {
+          return res.status(400).json({ error: 'Current password is required to change password' });
+        }
+        
+        const validPassword = await bcrypt.compare(currentPassword, user.passwordHash || '');
+        if (!validPassword) {
+          return res.status(400).json({ error: 'Current password is incorrect' });
+        }
+
+        if (newPassword.length < 8) {
+          return res.status(400).json({ error: 'New password must be at least 8 characters' });
+        }
+
+        updates.passwordHash = await bcrypt.hash(newPassword, 10);
+      }
+
+      const updatedUser = await storage.updateUser(userId, updates);
+
+      res.json({
+        id: updatedUser!.id,
+        email: updatedUser!.email,
+        firstName: updatedUser!.firstName,
+        lastName: updatedUser!.lastName,
+        role: updatedUser!.role,
+        plan: updatedUser!.plan,
+        credits: updatedUser!.credits,
+      });
+    } catch (error: any) {
+      console.error('Profile update error:', error);
+      res.status(500).json({ error: 'Failed to update profile' });
+    }
+  });
+
   app.get('/api/admin/users', requireAdmin, async (req, res) => {
     try {
       const users = await storage.getAllUsers();
@@ -355,6 +415,61 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error fetching users:", error);
       res.status(500).json({ error: 'Failed to fetch users' });
+    }
+  });
+
+  // Admin: Update any user's details
+  app.put('/api/admin/users/:userId', requireAdmin, async (req: any, res) => {
+    try {
+      const { userId } = req.params;
+      const { firstName, lastName, email, role, plan, credits, newPassword } = req.body;
+
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+
+      const updates: any = {};
+
+      if (firstName !== undefined) updates.firstName = firstName;
+      if (lastName !== undefined) updates.lastName = lastName;
+      if (role !== undefined) updates.role = role;
+      if (plan !== undefined) updates.plan = plan;
+      if (credits !== undefined) updates.credits = credits;
+
+      // Handle email change
+      if (email && email.toLowerCase() !== user.email) {
+        const existingUser = await storage.getUserByEmail(email.toLowerCase());
+        if (existingUser && existingUser.id !== userId) {
+          return res.status(400).json({ error: 'Email already in use' });
+        }
+        updates.email = email.toLowerCase();
+      }
+
+      // Handle password change (admin can set new password without knowing current)
+      if (newPassword) {
+        if (newPassword.length < 8) {
+          return res.status(400).json({ error: 'Password must be at least 8 characters' });
+        }
+        updates.passwordHash = await bcrypt.hash(newPassword, 10);
+      }
+
+      const updatedUser = await storage.updateUser(userId, updates);
+
+      res.json({
+        id: updatedUser!.id,
+        email: updatedUser!.email,
+        firstName: updatedUser!.firstName,
+        lastName: updatedUser!.lastName,
+        role: updatedUser!.role,
+        plan: updatedUser!.plan,
+        credits: updatedUser!.credits,
+        emailVerified: updatedUser!.emailVerified,
+        createdAt: updatedUser!.createdAt,
+      });
+    } catch (error: any) {
+      console.error('Admin user update error:', error);
+      res.status(500).json({ error: 'Failed to update user' });
     }
   });
 
