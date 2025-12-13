@@ -35,6 +35,7 @@ function AdminHome() {
     plan: 'free',
     credits: 0,
     newPassword: '',
+    emailVerified: false,
   });
 
   const { data: users, isLoading, error } = useQuery({
@@ -147,6 +148,7 @@ function AdminHome() {
       plan: user.plan || 'free',
       credits: user.credits || 0,
       newPassword: '',
+      emailVerified: user.emailVerified || false,
     });
     setEditDialogOpen(true);
   };
@@ -163,6 +165,7 @@ function AdminHome() {
       role: editForm.role,
       plan: editForm.plan,
       credits: creditsValue,
+      emailVerified: editForm.emailVerified,
     };
     if (editForm.newPassword) {
       updates.newPassword = editForm.newPassword;
@@ -370,6 +373,17 @@ function AdminHome() {
                         onChange={(e) => setEditForm({ ...editForm, newPassword: e.target.value })}
                         placeholder="At least 8 characters"
                         data-testid="input-edit-password"
+                      />
+                    </div>
+                    <div className="flex items-center justify-between p-3 rounded-lg border">
+                      <div className="space-y-0.5">
+                        <Label>Email Verified</Label>
+                        <p className="text-xs text-muted-foreground">Mark user's email as verified</p>
+                      </div>
+                      <SwitchUI 
+                        checked={editForm.emailVerified}
+                        onCheckedChange={(checked) => setEditForm({ ...editForm, emailVerified: checked })}
+                        data-testid="switch-edit-email-verified"
                       />
                     </div>
                   </div>

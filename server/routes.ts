@@ -422,7 +422,7 @@ export async function registerRoutes(
   app.put('/api/admin/users/:userId', requireAdmin, async (req: any, res) => {
     try {
       const { userId } = req.params;
-      const { firstName, lastName, email, role, plan, credits, newPassword } = req.body;
+      const { firstName, lastName, email, role, plan, credits, newPassword, emailVerified } = req.body;
 
       const user = await storage.getUser(userId);
       if (!user) {
@@ -436,6 +436,7 @@ export async function registerRoutes(
       if (role !== undefined) updates.role = role;
       if (plan !== undefined) updates.plan = plan;
       if (credits !== undefined) updates.credits = credits;
+      if (emailVerified !== undefined) updates.emailVerified = emailVerified;
 
       // Handle email change
       if (email && email.toLowerCase() !== user.email) {
