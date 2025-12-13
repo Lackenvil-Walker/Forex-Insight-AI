@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link, useLocation } from 'wouter';
 import { useAuth } from '@/lib/auth';
-import { LayoutDashboard, LogOut, Settings, ShieldAlert, LineChart, LogIn } from 'lucide-react';
+import { LayoutDashboard, LogOut, Settings, ShieldAlert, LineChart, LogIn, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Tooltip,
@@ -45,6 +45,18 @@ export function Layout({ children, isAdminLayout = false }: LayoutProps) {
         </div>
 
         <nav className="flex-1 px-4 space-y-2 mt-4">
+          {isAdminLayout && (
+            <Link href="/dashboard">
+              <Button
+                variant="ghost"
+                className="w-full justify-start gap-3 text-muted-foreground mb-4"
+                data-testid="button-back-to-dashboard"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                Back to Dashboard
+              </Button>
+            </Link>
+          )}
           {navItems.map((item) => {
             const isActive = location === item.href;
             return (
