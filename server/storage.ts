@@ -234,13 +234,20 @@ export async function seedAdminUser(): Promise<void> {
   const adminPassword = "p2Admin@1012!";
   
   try {
+    const passwordHash = await bcrypt.hash(adminPassword, 10);
     const existingAdmin = await storage.getUserByEmail(adminEmail);
+    
     if (existingAdmin) {
-      console.log("Admin user already exists");
+      await storage.updateUser(existingAdmin.id, {
+        passwordHash,
+        role: "admin",
+        plan: "pro",
+        emailVerified: true,
+      });
+      console.log("Admin user password reset:", adminEmail);
       return;
     }
     
-    const passwordHash = await bcrypt.hash(adminPassword, 10);
     await storage.createUser({
       email: adminEmail,
       firstName: "Emmanuel",
