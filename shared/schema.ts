@@ -126,3 +126,27 @@ export const insertTransactionSchema = createInsertSchema(transactions).omit({
 
 export type InsertTransaction = z.infer<typeof insertTransactionSchema>;
 export type Transaction = typeof transactions.$inferSelect;
+
+// Mobile money payments (Airtel Money)
+export const mobilePayments = pgTable("mobile_payments", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  packageId: varchar("package_id").references(() => creditPackages.id),
+  amount: integer("amount").notNull(),
+  credits: integer("credits").notNull(),
+  phoneNumber: varchar("phone_number").notNull(),
+  screenshotUrl: text("screenshot_url"),
+  status: varchar("status").notNull().default("pending"),
+  adminNotes: text("admin_notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  processedAt: timestamp("processed_at"),
+});
+
+export const insertMobilePaymentSchema = createInsertSchema(mobilePayments).omit({
+  id: true,
+  createdAt: true,
+  processedAt: true,
+});
+
+export type InsertMobilePayment = z.infer<typeof insertMobilePaymentSchema>;
+export type MobilePayment = typeof mobilePayments.$inferSelect;
