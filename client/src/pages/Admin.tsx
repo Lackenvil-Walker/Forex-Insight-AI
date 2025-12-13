@@ -13,7 +13,7 @@ import { Switch as SwitchUI } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Users, DollarSign, Activity, AlertCircle, Save, CheckCircle2, XCircle, Loader2, Key, Plus, Minus, Coins } from 'lucide-react';
+import { Users, DollarSign, Activity, AlertCircle, Save, CheckCircle2, XCircle, Loader2, Key, Plus, Minus, Coins, Pencil } from 'lucide-react';
 import { toast } from "sonner";
 import { formatDistanceToNow } from 'date-fns';
 import { queryClient } from '@/lib/queryClient';
@@ -24,6 +24,18 @@ function AdminHome() {
   const [creditsAmount, setCreditsAmount] = useState<string>('5');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [creditsAction, setCreditsAction] = useState<'add' | 'remove'>('add');
+  
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editUser, setEditUser] = useState<any>(null);
+  const [editForm, setEditForm] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    role: 'user',
+    plan: 'free',
+    credits: 0,
+    newPassword: '',
+  });
 
   const { data: users, isLoading, error } = useQuery({
     queryKey: ['admin-users'],
@@ -92,6 +104,70 @@ function AdminHome() {
     setCreditsAction(action);
     setCreditsAmount('5');
     setDialogOpen(true);
+  };
+
+  const editUserMutation = useMutation({
+    mutationFn: async (data: { userId: string; updates: any }) => {
+      const response = await fetch(`/api/admin/users/${data.userId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data.updates),
+        credentials: 'include'
+      });
+
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error || 'Failed to update user');
+      }
+
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-users'] });
+      setEditDialogOpen(false);
+      setEditUser(null);
+      toast.success("User Updated", {
+        description: "User details have been updated successfully."
+      });
+    },
+    onError: (error: Error) => {
+      toast.error("Failed to Update User", {
+        description: error.message
+      });
+    }
+  });
+
+  const openEditDialog = (user: any) => {
+    setEditUser(user);
+    setEditForm({
+      firstName: user.firstName || '',
+      lastName: user.lastName || '',
+      email: user.email || '',
+      role: user.role || 'user',
+      plan: user.plan || 'free',
+      credits: user.credits || 0,
+      newPassword: '',
+    });
+    setEditDialogOpen(true);
+  };
+
+  const handleEditSubmit = () => {
+    if (!editUser) return;
+    const creditsValue = typeof editForm.credits === 'string' 
+      ? parseInt(editForm.credits, 10) || 0 
+      : editForm.credits || 0;
+    const updates: any = {
+      firstName: editForm.firstName,
+      lastName: editForm.lastName,
+      email: editForm.email,
+      role: editForm.role,
+      plan: editForm.plan,
+      credits: creditsValue,
+    };
+    if (editForm.newPassword) {
+      updates.newPassword = editForm.newPassword;
+    }
+    editUserMutation.mutate({ userId: editUser.id, updates });
   };
 
   if (error) {
@@ -209,6 +285,110 @@ function AdminHome() {
                 </DialogContent>
               </Dialog>
 
+              <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+                <DialogContent className="max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>Edit User</DialogTitle>
+                    <DialogDescription>
+                      Update details for {editUser?.firstName} {editUser?.lastName}
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4 py-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-firstName">First Name</Label>
+                        <Input
+                          id="edit-firstName"
+                          value={editForm.firstName}
+                          onChange={(e) => setEditForm({ ...editForm, firstName: e.target.value })}
+                          data-testid="input-edit-firstname"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-lastName">Last Name</Label>
+                        <Input
+                          id="edit-lastName"
+                          value={editForm.lastName}
+                          onChange={(e) => setEditForm({ ...editForm, lastName: e.target.value })}
+                          data-testid="input-edit-lastname"
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-email">Email</Label>
+                      <Input
+                        id="edit-email"
+                        type="email"
+                        value={editForm.email}
+                        onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                        data-testid="input-edit-email"
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>Role</Label>
+                        <Select value={editForm.role} onValueChange={(v) => setEditForm({ ...editForm, role: v })}>
+                          <SelectTrigger data-testid="select-edit-role">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="user">User</SelectItem>
+                            <SelectItem value="admin">Admin</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Plan</Label>
+                        <Select value={editForm.plan} onValueChange={(v) => setEditForm({ ...editForm, plan: v })}>
+                          <SelectTrigger data-testid="select-edit-plan">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="free">Free</SelectItem>
+                            <SelectItem value="pro">Pro</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-credits">Credits</Label>
+                      <Input
+                        id="edit-credits"
+                        type="number"
+                        min="0"
+                        value={editForm.credits}
+                        onChange={(e) => setEditForm({ ...editForm, credits: parseInt(e.target.value) || 0 })}
+                        data-testid="input-edit-credits"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-password">New Password (leave blank to keep current)</Label>
+                      <Input
+                        id="edit-password"
+                        type="password"
+                        value={editForm.newPassword}
+                        onChange={(e) => setEditForm({ ...editForm, newPassword: e.target.value })}
+                        placeholder="At least 8 characters"
+                        data-testid="input-edit-password"
+                      />
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setEditDialogOpen(false)} data-testid="button-cancel-edit">
+                      Cancel
+                    </Button>
+                    <Button 
+                      onClick={handleEditSubmit} 
+                      disabled={editUserMutation.isPending}
+                      data-testid="button-save-edit"
+                    >
+                      {editUserMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
+                      Save Changes
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+
               <Table>
               <TableHeader>
                 <TableRow>
@@ -268,7 +448,15 @@ function AdminHome() {
                       </TableCell>
                       <TableCell data-testid={`text-joined-${user.id}`}>{joinedDate}</TableCell>
                       <TableCell className="text-right">
-                        <Button variant="ghost" size="sm" data-testid={`button-edit-${user.id}`}>Edit</Button>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          onClick={() => openEditDialog(user)}
+                          data-testid={`button-edit-${user.id}`}
+                        >
+                          <Pencil className="w-4 h-4 mr-1" />
+                          Edit
+                        </Button>
                       </TableCell>
                     </TableRow>
                   );
