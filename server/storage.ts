@@ -226,3 +226,34 @@ export class DatabaseStorage implements IStorage {
 }
 
 export const storage = new DatabaseStorage();
+
+import bcrypt from "bcryptjs";
+
+export async function seedAdminUser(): Promise<void> {
+  const adminEmail = "emmanuel.m@alintatechsolutions.co.za";
+  const adminPassword = "p2Admin@1012!";
+  
+  try {
+    const existingAdmin = await storage.getUserByEmail(adminEmail);
+    if (existingAdmin) {
+      console.log("Admin user already exists");
+      return;
+    }
+    
+    const passwordHash = await bcrypt.hash(adminPassword, 10);
+    await storage.createUser({
+      email: adminEmail,
+      firstName: "Emmanuel",
+      lastName: "Admin",
+      passwordHash,
+      role: "admin",
+      plan: "pro",
+      credits: 1000,
+      emailVerified: true,
+    });
+    
+    console.log("Admin user created successfully:", adminEmail);
+  } catch (error) {
+    console.error("Failed to seed admin user:", error);
+  }
+}

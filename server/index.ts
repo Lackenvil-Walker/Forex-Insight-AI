@@ -3,6 +3,7 @@ import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "http";
 import { setupSession } from "./session";
+import { seedAdminUser } from "./storage";
 
 const app = express();
 const httpServer = createServer(app);
@@ -50,6 +51,8 @@ app.use((req, res, next) => {
 (async () => {
   setupSession(app);
   await registerRoutes(httpServer, app);
+  
+  await seedAdminUser();
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
