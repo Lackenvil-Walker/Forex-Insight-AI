@@ -13,11 +13,25 @@ import { Switch as SwitchUI } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Users, DollarSign, Activity, AlertCircle, Save, CheckCircle2, XCircle, Loader2, Key, Plus, Minus, Coins, Pencil } from 'lucide-react';
+import { Users, DollarSign, Activity, AlertCircle, Save, CheckCircle2, XCircle, Loader2, Key, Plus, Minus, Coins, Pencil, Smartphone, Clock, Eye, Check, X } from 'lucide-react';
 import { toast } from "sonner";
-import { formatDistanceToNow } from 'date-fns';
+import { formatDistanceToNow, format } from 'date-fns';
 import { queryClient } from '@/lib/queryClient';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+
+interface MobilePayment {
+  id: string;
+  userId: string;
+  packageId: string | null;
+  amount: number;
+  credits: number;
+  phoneNumber: string;
+  screenshotUrl: string | null;
+  status: string;
+  adminNotes: string | null;
+  createdAt: string;
+  processedAt: string | null;
+}
 
 function AdminHome() {
   const [selectedUser, setSelectedUser] = useState<any>(null);
@@ -37,6 +51,10 @@ function AdminHome() {
     newPassword: '',
     emailVerified: false,
   });
+
+  const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
+  const [selectedPayment, setSelectedPayment] = useState<MobilePayment | null>(null);
+  const [adminNotes, setAdminNotes] = useState('');
 
   const { data: users, isLoading, error } = useQuery({
     queryKey: ['admin-users'],
@@ -151,6 +169,63 @@ function AdminHome() {
       emailVerified: user.emailVerified || false,
     });
     setEditDialogOpen(true);
+  };
+
+  const { data: pendingPayments, isLoading: paymentsLoading } = useQuery<MobilePayment[]>({
+    queryKey: ['admin-mobile-payments'],
+    queryFn: async () => {
+      const response = await fetch('/api/admin/mobile-payments', { credentials: 'include' });
+      if (!response.ok) throw new Error('Failed to fetch payments');
+      return response.json();
+    },
+  });
+
+  const approvePaymentMutation = useMutation({
+    mutationFn: async ({ id, status, adminNotes }: { id: string; status: string; adminNotes?: string }) => {
+      const response = await fetch(`/api/admin/mobile-payments/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status, adminNotes }),
+        credentials: 'include'
+      });
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error || 'Failed to update payment');
+      }
+      return response.json();
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['admin-mobile-payments'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-users'] });
+      setPaymentDialogOpen(false);
+      setSelectedPayment(null);
+      setAdminNotes('');
+      toast.success(variables.status === 'approved' ? "Payment Approved" : "Payment Rejected", {
+        description: variables.status === 'approved' ? "Credits have been added to the user's account." : "Payment has been rejected."
+      });
+    },
+    onError: (error: Error) => {
+      toast.error("Failed", { description: error.message });
+    }
+  });
+
+  const openPaymentDialog = (payment: MobilePayment) => {
+    setSelectedPayment(payment);
+    setAdminNotes('');
+    setPaymentDialogOpen(true);
+  };
+
+  const handlePaymentAction = (status: 'approved' | 'rejected') => {
+    if (!selectedPayment) return;
+    approvePaymentMutation.mutate({ id: selectedPayment.id, status, adminNotes });
+  };
+
+  const formatPriceZAR = (priceInCents: number) => {
+    return new Intl.NumberFormat("en-ZA", {
+      style: "currency",
+      currency: "ZAR",
+      minimumFractionDigits: 0,
+    }).format(priceInCents / 100);
   };
 
   const handleEditSubmit = () => {
@@ -476,6 +551,155 @@ function AdminHome() {
                   );
                 })}
               </TableBody>
+              </Table>
+            </>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Pending Mobile Payments */}
+      <Card className="col-span-4">
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <Smartphone className="w-5 h-5 text-red-500" />
+            <CardTitle>Pending Mobile Payments</CardTitle>
+          </div>
+          <CardDescription>
+            Approve or reject Airtel Money payments. Credits are typically processed at 10am, 12pm, and 4pm.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {paymentsLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : !pendingPayments || pendingPayments.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <Clock className="w-12 h-12 text-muted-foreground mb-4 opacity-50" />
+              <p className="text-muted-foreground">No pending payments</p>
+            </div>
+          ) : (
+            <>
+              <Dialog open={paymentDialogOpen} onOpenChange={setPaymentDialogOpen}>
+                <DialogContent className="max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>Review Payment</DialogTitle>
+                    <DialogDescription>
+                      Review and approve or reject this mobile payment
+                    </DialogDescription>
+                  </DialogHeader>
+                  {selectedPayment && (
+                    <div className="space-y-4 py-4">
+                      <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                          <Label className="text-muted-foreground">Amount</Label>
+                          <p className="font-medium text-lg">{formatPriceZAR(selectedPayment.amount)}</p>
+                        </div>
+                        <div>
+                          <Label className="text-muted-foreground">Credits</Label>
+                          <p className="font-medium text-lg">{selectedPayment.credits}</p>
+                        </div>
+                        <div>
+                          <Label className="text-muted-foreground">Phone Number</Label>
+                          <p className="font-medium">{selectedPayment.phoneNumber}</p>
+                        </div>
+                        <div>
+                          <Label className="text-muted-foreground">Submitted</Label>
+                          <p className="font-medium">{format(new Date(selectedPayment.createdAt), 'MMM d, yyyy h:mm a')}</p>
+                        </div>
+                      </div>
+                      
+                      {selectedPayment.screenshotUrl && (
+                        <div>
+                          <Label className="text-muted-foreground">Payment Screenshot</Label>
+                          <img 
+                            src={selectedPayment.screenshotUrl} 
+                            alt="Payment screenshot" 
+                            className="mt-2 w-full rounded-lg border max-h-64 object-contain"
+                          />
+                        </div>
+                      )}
+
+                      <div className="space-y-2">
+                        <Label>Admin Notes (optional)</Label>
+                        <Textarea
+                          value={adminNotes}
+                          onChange={(e) => setAdminNotes(e.target.value)}
+                          placeholder="Add notes about this payment..."
+                          className="h-20"
+                          data-testid="input-admin-notes"
+                        />
+                      </div>
+                    </div>
+                  )}
+                  <DialogFooter className="gap-2">
+                    <Button 
+                      variant="destructive" 
+                      onClick={() => handlePaymentAction('rejected')}
+                      disabled={approvePaymentMutation.isPending}
+                      data-testid="button-reject-payment"
+                    >
+                      {approvePaymentMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <X className="w-4 h-4 mr-2" />}
+                      Reject
+                    </Button>
+                    <Button 
+                      onClick={() => handlePaymentAction('approved')}
+                      disabled={approvePaymentMutation.isPending}
+                      className="bg-green-600 hover:bg-green-700"
+                      data-testid="button-approve-payment"
+                    >
+                      {approvePaymentMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Check className="w-4 h-4 mr-2" />}
+                      Approve
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Phone</TableHead>
+                    <TableHead>Amount</TableHead>
+                    <TableHead>Credits</TableHead>
+                    <TableHead>Screenshot</TableHead>
+                    <TableHead>Submitted</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {pendingPayments.map((payment) => (
+                    <TableRow key={payment.id} data-testid={`row-payment-${payment.id}`}>
+                      <TableCell className="font-medium">{payment.phoneNumber}</TableCell>
+                      <TableCell>{formatPriceZAR(payment.amount)}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="flex items-center gap-1 w-fit">
+                          <Coins className="w-3 h-3" />
+                          {payment.credits}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {payment.screenshotUrl ? (
+                          <Badge variant="secondary" className="flex items-center gap-1 w-fit">
+                            <Eye className="w-3 h-3" />
+                            Attached
+                          </Badge>
+                        ) : (
+                          <span className="text-muted-foreground text-sm">None</span>
+                        )}
+                      </TableCell>
+                      <TableCell>{formatDistanceToNow(new Date(payment.createdAt), { addSuffix: true })}</TableCell>
+                      <TableCell className="text-right">
+                        <Button 
+                          size="sm" 
+                          onClick={() => openPaymentDialog(payment)}
+                          data-testid={`button-review-${payment.id}`}
+                        >
+                          Review
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
               </Table>
             </>
           )}

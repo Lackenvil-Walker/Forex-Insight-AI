@@ -12,12 +12,15 @@ import {
   type InsertCreditPackage,
   type Transaction,
   type InsertTransaction,
+  type MobilePayment,
+  type InsertMobilePayment,
   users,
   analyses,
   systemConfig,
   usageTracking,
   creditPackages,
   transactions,
+  mobilePayments,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc } from "drizzle-orm";
@@ -52,6 +55,12 @@ export interface IStorage {
   createTransaction(tx: InsertTransaction): Promise<Transaction>;
   getTransactionByReference(reference: string): Promise<Transaction | undefined>;
   updateTransactionStatus(id: string, status: string): Promise<Transaction | undefined>;
+
+  createMobilePayment(payment: InsertMobilePayment): Promise<MobilePayment>;
+  getMobilePaymentsByUser(userId: string): Promise<MobilePayment[]>;
+  getPendingMobilePayments(): Promise<MobilePayment[]>;
+  getMobilePayment(id: string): Promise<MobilePayment | undefined>;
+  updateMobilePaymentStatus(id: string, status: string, adminNotes?: string): Promise<MobilePayment | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -222,6 +231,31 @@ export class DatabaseStorage implements IStorage {
   async updateTransactionStatus(id: string, status: string): Promise<Transaction | undefined> {
     const [tx] = await db.update(transactions).set({ status }).where(eq(transactions.id, id)).returning();
     return tx || undefined;
+  }
+
+  async createMobilePayment(payment: InsertMobilePayment): Promise<MobilePayment> {
+    const [mp] = await db.insert(mobilePayments).values(payment).returning();
+    return mp;
+  }
+
+  async getMobilePaymentsByUser(userId: string): Promise<MobilePayment[]> {
+    return await db.select().from(mobilePayments).where(eq(mobilePayments.userId, userId)).orderBy(desc(mobilePayments.createdAt));
+  }
+
+  async getPendingMobilePayments(): Promise<MobilePayment[]> {
+    return await db.select().from(mobilePayments).where(eq(mobilePayments.status, 'pending')).orderBy(desc(mobilePayments.createdAt));
+  }
+
+  async getMobilePayment(id: string): Promise<MobilePayment | undefined> {
+    const [mp] = await db.select().from(mobilePayments).where(eq(mobilePayments.id, id));
+    return mp || undefined;
+  }
+
+  async updateMobilePaymentStatus(id: string, status: string, adminNotes?: string): Promise<MobilePayment | undefined> {
+    const updates: any = { status, processedAt: new Date() };
+    if (adminNotes !== undefined) updates.adminNotes = adminNotes;
+    const [mp] = await db.update(mobilePayments).set(updates).where(eq(mobilePayments.id, id)).returning();
+    return mp || undefined;
   }
 }
 

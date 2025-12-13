@@ -738,5 +738,89 @@ export async function registerRoutes(
     }
   });
 
+  // Mobile payment routes (Airtel Money)
+  app.post('/api/mobile-payments', requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.session.userId;
+      const { packageId, phoneNumber, screenshotUrl } = req.body;
+
+      if (!phoneNumber) {
+        return res.status(400).json({ error: 'Phone number is required' });
+      }
+
+      const creditPackage = await storage.getCreditPackage(packageId);
+      if (!creditPackage) {
+        return res.status(404).json({ error: 'Package not found' });
+      }
+
+      const payment = await storage.createMobilePayment({
+        userId,
+        packageId,
+        amount: creditPackage.priceZar,
+        credits: creditPackage.credits,
+        phoneNumber,
+        screenshotUrl: screenshotUrl || null,
+        status: 'pending',
+      });
+
+      res.json(payment);
+    } catch (error: any) {
+      console.error("Error creating mobile payment:", error);
+      res.status(500).json({ error: 'Failed to submit payment' });
+    }
+  });
+
+  app.get('/api/mobile-payments', requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.session.userId;
+      const payments = await storage.getMobilePaymentsByUser(userId);
+      res.json(payments);
+    } catch (error) {
+      console.error("Error fetching mobile payments:", error);
+      res.status(500).json({ error: 'Failed to fetch payments' });
+    }
+  });
+
+  app.get('/api/admin/mobile-payments', requireAdmin, async (req, res) => {
+    try {
+      const payments = await storage.getPendingMobilePayments();
+      res.json(payments);
+    } catch (error) {
+      console.error("Error fetching pending mobile payments:", error);
+      res.status(500).json({ error: 'Failed to fetch pending payments' });
+    }
+  });
+
+  app.put('/api/admin/mobile-payments/:id', requireAdmin, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const { status, adminNotes } = req.body;
+
+      if (!['approved', 'rejected'].includes(status)) {
+        return res.status(400).json({ error: 'Status must be "approved" or "rejected"' });
+      }
+
+      const payment = await storage.getMobilePayment(id);
+      if (!payment) {
+        return res.status(404).json({ error: 'Payment not found' });
+      }
+
+      if (payment.status !== 'pending') {
+        return res.status(400).json({ error: 'Payment has already been processed' });
+      }
+
+      const updatedPayment = await storage.updateMobilePaymentStatus(id, status, adminNotes);
+
+      if (status === 'approved') {
+        await storage.addCredits(payment.userId, payment.credits);
+      }
+
+      res.json(updatedPayment);
+    } catch (error: any) {
+      console.error("Error updating mobile payment:", error);
+      res.status(500).json({ error: 'Failed to update payment' });
+    }
+  });
+
   return httpServer;
 }
