@@ -62,6 +62,7 @@ export interface IStorage {
   createMobilePayment(payment: InsertMobilePayment): Promise<MobilePayment>;
   getMobilePaymentsByUser(userId: string): Promise<MobilePayment[]>;
   getPendingMobilePayments(): Promise<MobilePayment[]>;
+  getAllMobilePayments(status?: string): Promise<MobilePayment[]>;
   getMobilePayment(id: string): Promise<MobilePayment | undefined>;
   updateMobilePaymentStatus(id: string, status: string, adminNotes?: string): Promise<MobilePayment | undefined>;
 
@@ -251,6 +252,13 @@ export class DatabaseStorage implements IStorage {
 
   async getPendingMobilePayments(): Promise<MobilePayment[]> {
     return await db.select().from(mobilePayments).where(eq(mobilePayments.status, 'pending')).orderBy(desc(mobilePayments.createdAt));
+  }
+
+  async getAllMobilePayments(status?: string): Promise<MobilePayment[]> {
+    if (status && status !== 'all') {
+      return await db.select().from(mobilePayments).where(eq(mobilePayments.status, status)).orderBy(desc(mobilePayments.createdAt));
+    }
+    return await db.select().from(mobilePayments).orderBy(desc(mobilePayments.createdAt));
   }
 
   async getMobilePayment(id: string): Promise<MobilePayment | undefined> {

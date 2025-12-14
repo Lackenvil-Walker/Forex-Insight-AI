@@ -13,11 +13,11 @@ import { Switch as SwitchUI } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Users, DollarSign, Activity, AlertCircle, Save, CheckCircle2, XCircle, Loader2, Key, Plus, Minus, Coins, Pencil, Smartphone, Clock, Eye, Check, X } from 'lucide-react';
+import { Users, DollarSign, Activity, AlertCircle, Save, CheckCircle2, XCircle, Loader2, Key, Plus, Minus, Coins, Pencil, Smartphone, Clock, Eye, Check, X, Ban, UserCheck, UserX, TrendingUp, CreditCard } from 'lucide-react';
 import { toast } from "sonner";
 import { formatDistanceToNow, format } from 'date-fns';
 import { queryClient } from '@/lib/queryClient';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 interface MobilePayment {
   id: string;
@@ -33,7 +33,141 @@ interface MobilePayment {
   processedAt: string | null;
 }
 
-function AdminHome() {
+const formatPriceZAR = (priceInCents: number) => {
+  return new Intl.NumberFormat("en-ZA", {
+    style: "currency",
+    currency: "ZAR",
+    minimumFractionDigits: 0,
+  }).format(priceInCents / 100);
+};
+
+function AdminOverview() {
+  const { data: users } = useQuery({
+    queryKey: ['admin-users'],
+    queryFn: async () => {
+      const response = await fetch('/api/admin/users', { credentials: 'include' });
+      if (!response.ok) throw new Error('Failed to fetch users');
+      return response.json();
+    },
+  });
+
+  const { data: pendingPayments } = useQuery<MobilePayment[]>({
+    queryKey: ['admin-mobile-payments'],
+    queryFn: async () => {
+      const response = await fetch('/api/admin/mobile-payments', { credentials: 'include' });
+      if (!response.ok) throw new Error('Failed to fetch payments');
+      return response.json();
+    },
+  });
+
+  const totalUsers = users?.length || 0;
+  const activeUsers = users?.filter((u: any) => u.status === 'active').length || 0;
+  const totalCredits = users?.reduce((sum: number, u: any) => sum + (u.credits || 0), 0) || 0;
+  const pendingCount = pendingPayments?.filter(p => p.status === 'pending').length || 0;
+
+  return (
+    <div className="max-w-7xl mx-auto space-y-8">
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight" data-testid="text-overview-title">Admin Overview</h1>
+        <p className="text-muted-foreground">Monitor platform health and key metrics.</p>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Users</CardTitle>
+            <Users className="h-4 w-4 text-primary" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold" data-testid="text-total-users">{totalUsers}</div>
+            <p className="text-xs text-muted-foreground">{activeUsers} active accounts</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Credits</CardTitle>
+            <Coins className="h-4 w-4 text-primary" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold" data-testid="text-total-credits">{totalCredits}</div>
+            <p className="text-xs text-muted-foreground">Across all users</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Pending Payments</CardTitle>
+            <CreditCard className="h-4 w-4 text-orange-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-orange-500" data-testid="text-pending-payments">{pendingCount}</div>
+            <p className="text-xs text-muted-foreground">Awaiting approval</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">System Status</CardTitle>
+            <AlertCircle className="h-4 w-4 text-green-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-500" data-testid="text-system-status">Operational</div>
+            <p className="text-xs text-muted-foreground">All services running</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid gap-6 md:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle>Quick Actions</CardTitle>
+            <CardDescription>Common administrative tasks</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <Button variant="outline" className="w-full justify-start gap-2" onClick={() => window.location.href = '/admin/users'} data-testid="button-manage-users">
+              <Users className="w-4 h-4" />
+              Manage Users
+            </Button>
+            <Button variant="outline" className="w-full justify-start gap-2" onClick={() => window.location.href = '/admin/payments'} data-testid="button-review-payments">
+              <CreditCard className="w-4 h-4" />
+              Review Payments
+            </Button>
+            <Button variant="outline" className="w-full justify-start gap-2" onClick={() => window.location.href = '/admin/settings'} data-testid="button-system-settings">
+              <Key className="w-4 h-4" />
+              System Settings
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Recent Activity</CardTitle>
+            <CardDescription>Latest platform events</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {pendingCount > 0 ? (
+              <div className="flex items-center gap-3 p-3 bg-orange-500/10 rounded-lg border border-orange-500/20">
+                <Smartphone className="w-5 h-5 text-orange-500" />
+                <div>
+                  <p className="text-sm font-medium">Pending Payments</p>
+                  <p className="text-xs text-muted-foreground">{pendingCount} payment(s) need review</p>
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center gap-3 p-3 bg-muted rounded-lg">
+                <CheckCircle2 className="w-5 h-5 text-green-500" />
+                <div>
+                  <p className="text-sm font-medium">All Clear</p>
+                  <p className="text-xs text-muted-foreground">No pending actions required</p>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}
+
+function AdminUsers() {
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [creditsAmount, setCreditsAmount] = useState<string>('5');
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -48,31 +182,24 @@ function AdminHome() {
     role: 'user',
     plan: 'free',
     credits: 0,
+    status: 'active',
     newPassword: '',
     emailVerified: false,
   });
 
-  const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
-  const [selectedPayment, setSelectedPayment] = useState<MobilePayment | null>(null);
-  const [adminNotes, setAdminNotes] = useState('');
+  const [statusDialogOpen, setStatusDialogOpen] = useState(false);
+  const [statusAction, setStatusAction] = useState<'block' | 'suspend' | 'activate'>('block');
+  const [statusUser, setStatusUser] = useState<any>(null);
 
   const { data: users, isLoading, error } = useQuery({
     queryKey: ['admin-users'],
     queryFn: async () => {
-      const response = await fetch('/api/admin/users', {
-        credentials: 'include'
-      });
-
+      const response = await fetch('/api/admin/users', { credentials: 'include' });
       if (!response.ok) {
-        if (response.status === 403) {
-          throw new Error('FORBIDDEN');
-        }
-        if (response.status === 401) {
-          throw new Error('UNAUTHORIZED');
-        }
+        if (response.status === 403) throw new Error('FORBIDDEN');
+        if (response.status === 401) throw new Error('UNAUTHORIZED');
         throw new Error('Failed to fetch users');
       }
-
       return response.json();
     },
   });
@@ -85,11 +212,7 @@ function AdminHome() {
         body: JSON.stringify({ amount, action }),
         credentials: 'include'
       });
-
-      if (!response.ok) {
-        throw new Error('Failed to update credits');
-      }
-
+      if (!response.ok) throw new Error('Failed to update credits');
       return response.json();
     },
     onSuccess: () => {
@@ -102,9 +225,7 @@ function AdminHome() {
       });
     },
     onError: (error: Error) => {
-      toast.error("Failed to Update Credits", {
-        description: error.message
-      });
+      toast.error("Failed to Update Credits", { description: error.message });
     }
   });
 
@@ -133,26 +254,20 @@ function AdminHome() {
         body: JSON.stringify(data.updates),
         credentials: 'include'
       });
-
       if (!response.ok) {
         const err = await response.json();
         throw new Error(err.error || 'Failed to update user');
       }
-
       return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-users'] });
       setEditDialogOpen(false);
       setEditUser(null);
-      toast.success("User Updated", {
-        description: "User details have been updated successfully."
-      });
+      toast.success("User Updated", { description: "User details have been updated successfully." });
     },
     onError: (error: Error) => {
-      toast.error("Failed to Update User", {
-        description: error.message
-      });
+      toast.error("Failed to Update User", { description: error.message });
     }
   });
 
@@ -165,67 +280,11 @@ function AdminHome() {
       role: user.role || 'user',
       plan: user.plan || 'free',
       credits: user.credits || 0,
+      status: user.status || 'active',
       newPassword: '',
       emailVerified: user.emailVerified || false,
     });
     setEditDialogOpen(true);
-  };
-
-  const { data: pendingPayments, isLoading: paymentsLoading } = useQuery<MobilePayment[]>({
-    queryKey: ['admin-mobile-payments'],
-    queryFn: async () => {
-      const response = await fetch('/api/admin/mobile-payments', { credentials: 'include' });
-      if (!response.ok) throw new Error('Failed to fetch payments');
-      return response.json();
-    },
-  });
-
-  const approvePaymentMutation = useMutation({
-    mutationFn: async ({ id, status, adminNotes }: { id: string; status: string; adminNotes?: string }) => {
-      const response = await fetch(`/api/admin/mobile-payments/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status, adminNotes }),
-        credentials: 'include'
-      });
-      if (!response.ok) {
-        const err = await response.json();
-        throw new Error(err.error || 'Failed to update payment');
-      }
-      return response.json();
-    },
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['admin-mobile-payments'] });
-      queryClient.invalidateQueries({ queryKey: ['admin-users'] });
-      setPaymentDialogOpen(false);
-      setSelectedPayment(null);
-      setAdminNotes('');
-      toast.success(variables.status === 'approved' ? "Payment Approved" : "Payment Rejected", {
-        description: variables.status === 'approved' ? "Credits have been added to the user's account." : "Payment has been rejected."
-      });
-    },
-    onError: (error: Error) => {
-      toast.error("Failed", { description: error.message });
-    }
-  });
-
-  const openPaymentDialog = (payment: MobilePayment) => {
-    setSelectedPayment(payment);
-    setAdminNotes('');
-    setPaymentDialogOpen(true);
-  };
-
-  const handlePaymentAction = (status: 'approved' | 'rejected') => {
-    if (!selectedPayment) return;
-    approvePaymentMutation.mutate({ id: selectedPayment.id, status, adminNotes });
-  };
-
-  const formatPriceZAR = (priceInCents: number) => {
-    return new Intl.NumberFormat("en-ZA", {
-      style: "currency",
-      currency: "ZAR",
-      minimumFractionDigits: 0,
-    }).format(priceInCents / 100);
   };
 
   const handleEditSubmit = () => {
@@ -240,6 +299,7 @@ function AdminHome() {
       role: editForm.role,
       plan: editForm.plan,
       credits: creditsValue,
+      status: editForm.status,
       emailVerified: editForm.emailVerified,
     };
     if (editForm.newPassword) {
@@ -248,72 +308,83 @@ function AdminHome() {
     editUserMutation.mutate({ userId: editUser.id, updates });
   };
 
+  const statusMutation = useMutation({
+    mutationFn: async ({ user, status }: { user: any; status: string }) => {
+      const response = await fetch(`/api/admin/users/${user.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          firstName: user.firstName,
+          lastName: user.lastName,
+          email: user.email,
+          role: user.role,
+          plan: user.plan,
+          credits: user.credits,
+          emailVerified: user.emailVerified,
+          status,
+        }),
+        credentials: 'include'
+      });
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error || 'Failed to update status');
+      }
+      return response.json();
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['admin-users'] });
+      setStatusDialogOpen(false);
+      setStatusUser(null);
+      const statusLabel = variables.status === 'active' ? 'activated' : variables.status === 'blocked' ? 'blocked' : 'suspended';
+      toast.success("User Status Updated", { description: `User has been ${statusLabel}.` });
+    },
+    onError: (error: Error) => {
+      toast.error("Failed to Update Status", { description: error.message });
+    }
+  });
+
+  const openStatusDialog = (user: any, action: 'block' | 'suspend' | 'activate') => {
+    setStatusUser(user);
+    setStatusAction(action);
+    setStatusDialogOpen(true);
+  };
+
+  const handleStatusConfirm = () => {
+    if (!statusUser) return;
+    const newStatus = statusAction === 'block' ? 'blocked' : statusAction === 'suspend' ? 'suspended' : 'active';
+    statusMutation.mutate({ user: statusUser, status: newStatus });
+  };
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'active':
+        return <Badge variant="outline" className="border-green-500 text-green-500">Active</Badge>;
+      case 'blocked':
+        return <Badge variant="outline" className="border-red-500 text-red-500">Blocked</Badge>;
+      case 'suspended':
+        return <Badge variant="outline" className="border-orange-500 text-orange-500">Suspended</Badge>;
+      default:
+        return <Badge variant="outline">Unknown</Badge>;
+    }
+  };
+
   if (error) {
     if (error.message === 'FORBIDDEN') {
-      toast.error("Access Denied", {
-        description: "You do not have permission to access this resource.",
-      });
+      toast.error("Access Denied", { description: "You do not have permission to access this resource." });
     }
   }
 
   return (
-    <div className="max-w-7xl mx-auto space-y-8">
+    <div className="max-w-7xl mx-auto space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Admin Overview</h1>
-        <p className="text-muted-foreground">Manage users, subscriptions, and system health.</p>
+        <h1 className="text-3xl font-bold tracking-tight" data-testid="text-users-title">User Management</h1>
+        <p className="text-muted-foreground">Manage users, credits, and account status.</p>
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
-            <DollarSign className="h-4 w-4 text-primary" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">$45,231.89</div>
-            <p className="text-xs text-muted-foreground">+20.1% from last month</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Subscriptions</CardTitle>
-            <Users className="h-4 w-4 text-primary" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">+2350</div>
-            <p className="text-xs text-muted-foreground">+180 new this week</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">AI API Usage</CardTitle>
-            <Activity className="h-4 w-4 text-primary" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">12,234</div>
-            <p className="text-xs text-muted-foreground">Requests today</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">System Status</CardTitle>
-            <AlertCircle className="h-4 w-4 text-green-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-500">Operational</div>
-            <p className="text-xs text-muted-foreground">Last downtime: 32 days ago</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Users Table */}
-      <Card className="col-span-4">
+      <Card>
         <CardHeader>
-          <CardTitle>Recent Users</CardTitle>
-          <CardDescription>
-            Manage your user base and view subscription details.
-          </CardDescription>
+          <CardTitle>All Users</CardTitle>
+          <CardDescription>View and manage all registered users.</CardDescription>
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -371,7 +442,7 @@ function AdminHome() {
                       Update details for {editUser?.firstName} {editUser?.lastName}
                     </DialogDescription>
                   </DialogHeader>
-                  <div className="space-y-4 py-4">
+                  <div className="space-y-4 py-4 max-h-[60vh] overflow-y-auto">
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="edit-firstName">First Name</Label>
@@ -428,16 +499,31 @@ function AdminHome() {
                         </Select>
                       </div>
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="edit-credits">Credits</Label>
-                      <Input
-                        id="edit-credits"
-                        type="number"
-                        min="0"
-                        value={editForm.credits}
-                        onChange={(e) => setEditForm({ ...editForm, credits: parseInt(e.target.value) || 0 })}
-                        data-testid="input-edit-credits"
-                      />
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-credits">Credits</Label>
+                        <Input
+                          id="edit-credits"
+                          type="number"
+                          min="0"
+                          value={editForm.credits}
+                          onChange={(e) => setEditForm({ ...editForm, credits: parseInt(e.target.value) || 0 })}
+                          data-testid="input-edit-credits"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Status</Label>
+                        <Select value={editForm.status} onValueChange={(v) => setEditForm({ ...editForm, status: v })}>
+                          <SelectTrigger data-testid="select-edit-status">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="active">Active</SelectItem>
+                            <SelectItem value="suspended">Suspended</SelectItem>
+                            <SelectItem value="blocked">Blocked</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="edit-password">New Password (leave blank to keep current)</Label>
@@ -478,105 +564,313 @@ function AdminHome() {
                 </DialogContent>
               </Dialog>
 
+              <Dialog open={statusDialogOpen} onOpenChange={setStatusDialogOpen}>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>
+                      {statusAction === 'block' ? 'Block User' : statusAction === 'suspend' ? 'Suspend User' : 'Activate User'}
+                    </DialogTitle>
+                    <DialogDescription>
+                      {statusAction === 'block' 
+                        ? `Block ${statusUser?.firstName} ${statusUser?.lastName}? They will not be able to access their account.`
+                        : statusAction === 'suspend' 
+                        ? `Suspend ${statusUser?.firstName} ${statusUser?.lastName}? They will have limited access.`
+                        : `Activate ${statusUser?.firstName} ${statusUser?.lastName}? They will regain full access.`
+                      }
+                    </DialogDescription>
+                  </DialogHeader>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setStatusDialogOpen(false)} data-testid="button-cancel-status">
+                      Cancel
+                    </Button>
+                    <Button 
+                      variant={statusAction === 'activate' ? 'default' : 'destructive'}
+                      onClick={handleStatusConfirm}
+                      disabled={statusMutation.isPending}
+                      data-testid="button-confirm-status"
+                    >
+                      {statusMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                      {statusAction === 'block' ? 'Block' : statusAction === 'suspend' ? 'Suspend' : 'Activate'}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+
               <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Credits</TableHead>
-                  <TableHead>Plan</TableHead>
-                  <TableHead>Role</TableHead>
-                  <TableHead>Joined</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {users.map((user: any) => {
-                  const fullName = `${user.firstName} ${user.lastName}`.trim() || 'Unknown';
-                  const joinedDate = formatDistanceToNow(new Date(user.createdAt), { addSuffix: true });
-                  
-                  return (
-                    <TableRow key={user.id} data-testid={`row-user-${user.id}`}>
-                      <TableCell className="font-medium" data-testid={`text-name-${user.id}`}>{fullName}</TableCell>
-                      <TableCell data-testid={`text-email-${user.id}`}>{user.email || 'N/A'}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Badge variant="outline" className="flex items-center gap-1" data-testid={`badge-credits-${user.id}`}>
-                            <Coins className="w-3 h-3" />
-                            {user.credits || 0}
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Credits</TableHead>
+                    <TableHead>Plan</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Role</TableHead>
+                    <TableHead>Joined</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {users.map((user: any) => {
+                    const fullName = `${user.firstName} ${user.lastName}`.trim() || 'Unknown';
+                    const joinedDate = formatDistanceToNow(new Date(user.createdAt), { addSuffix: true });
+                    
+                    return (
+                      <TableRow key={user.id} data-testid={`row-user-${user.id}`}>
+                        <TableCell className="font-medium" data-testid={`text-name-${user.id}`}>{fullName}</TableCell>
+                        <TableCell data-testid={`text-email-${user.id}`}>{user.email || 'N/A'}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Badge variant="outline" className="flex items-center gap-1" data-testid={`badge-credits-${user.id}`}>
+                              <Coins className="w-3 h-3" />
+                              {user.credits || 0}
+                            </Badge>
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-6 w-6"
+                              onClick={() => openCreditsDialog(user, 'add')}
+                              data-testid={`button-add-credits-${user.id}`}
+                            >
+                              <Plus className="w-3 h-3" />
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-6 w-6"
+                              onClick={() => openCreditsDialog(user, 'remove')}
+                              data-testid={`button-remove-credits-${user.id}`}
+                            >
+                              <Minus className="w-3 h-3" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className={user.plan === 'pro' ? 'border-primary text-primary' : ''} data-testid={`badge-plan-${user.id}`}>
+                            {user.plan}
                           </Badge>
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            className="h-6 w-6"
-                            onClick={() => openCreditsDialog(user, 'add')}
-                            data-testid={`button-add-credits-${user.id}`}
-                          >
-                            <Plus className="w-3 h-3" />
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            className="h-6 w-6"
-                            onClick={() => openCreditsDialog(user, 'remove')}
-                            data-testid={`button-remove-credits-${user.id}`}
-                          >
-                            <Minus className="w-3 h-3" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className={user.plan === 'pro' ? 'border-primary text-primary' : ''} data-testid={`badge-plan-${user.id}`}>
-                          {user.plan}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={user.role === 'admin' ? 'default' : 'secondary'} data-testid={`badge-role-${user.id}`}>
-                          {user.role}
-                        </Badge>
-                      </TableCell>
-                      <TableCell data-testid={`text-joined-${user.id}`}>{joinedDate}</TableCell>
-                      <TableCell className="text-right">
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          onClick={() => openEditDialog(user)}
-                          data-testid={`button-edit-${user.id}`}
-                        >
-                          <Pencil className="w-4 h-4 mr-1" />
-                          Edit
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
+                        </TableCell>
+                        <TableCell data-testid={`badge-status-${user.id}`}>
+                          {getStatusBadge(user.status || 'active')}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={user.role === 'admin' ? 'default' : 'secondary'} data-testid={`badge-role-${user.id}`}>
+                            {user.role}
+                          </Badge>
+                        </TableCell>
+                        <TableCell data-testid={`text-joined-${user.id}`}>{joinedDate}</TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end gap-1">
+                            <Button 
+                              variant="ghost" 
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={() => openEditDialog(user)}
+                              data-testid={`button-edit-${user.id}`}
+                              title="Edit user"
+                            >
+                              <Pencil className="w-4 h-4" />
+                            </Button>
+                            {user.status === 'active' ? (
+                              <>
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon"
+                                  className="h-8 w-8 text-orange-500 hover:text-orange-600"
+                                  onClick={() => openStatusDialog(user, 'suspend')}
+                                  data-testid={`button-suspend-${user.id}`}
+                                  title="Suspend user"
+                                >
+                                  <UserX className="w-4 h-4" />
+                                </Button>
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon"
+                                  className="h-8 w-8 text-red-500 hover:text-red-600"
+                                  onClick={() => openStatusDialog(user, 'block')}
+                                  data-testid={`button-block-${user.id}`}
+                                  title="Block user"
+                                >
+                                  <Ban className="w-4 h-4" />
+                                </Button>
+                              </>
+                            ) : (
+                              <Button 
+                                variant="ghost" 
+                                size="icon"
+                                className="h-8 w-8 text-green-500 hover:text-green-600"
+                                onClick={() => openStatusDialog(user, 'activate')}
+                                data-testid={`button-activate-${user.id}`}
+                                title="Activate user"
+                              >
+                                <UserCheck className="w-4 h-4" />
+                              </Button>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
               </Table>
             </>
           )}
         </CardContent>
       </Card>
+    </div>
+  );
+}
 
-      {/* Pending Mobile Payments */}
-      <Card className="col-span-4">
+function AdminPayments() {
+  const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
+  const [selectedPayment, setSelectedPayment] = useState<MobilePayment | null>(null);
+  const [adminNotes, setAdminNotes] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('pending');
+
+  const { data: allPayments, isLoading } = useQuery<MobilePayment[]>({
+    queryKey: ['admin-mobile-payments'],
+    queryFn: async () => {
+      const response = await fetch('/api/admin/mobile-payments', { credentials: 'include' });
+      if (!response.ok) throw new Error('Failed to fetch payments');
+      return response.json();
+    },
+  });
+
+  const payments = statusFilter === 'all' 
+    ? allPayments 
+    : allPayments?.filter(p => p.status === statusFilter);
+
+  const approvePaymentMutation = useMutation({
+    mutationFn: async ({ id, status, adminNotes }: { id: string; status: string; adminNotes?: string }) => {
+      const response = await fetch(`/api/admin/mobile-payments/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status, adminNotes }),
+        credentials: 'include'
+      });
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error || 'Failed to update payment');
+      }
+      return response.json();
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['admin-mobile-payments'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-users'] });
+      setPaymentDialogOpen(false);
+      setSelectedPayment(null);
+      setAdminNotes('');
+      toast.success(variables.status === 'approved' ? "Payment Approved" : "Payment Rejected", {
+        description: variables.status === 'approved' ? "Credits have been added to the user's account." : "Payment has been rejected."
+      });
+    },
+    onError: (error: Error) => {
+      toast.error("Failed", { description: error.message });
+    }
+  });
+
+  const openPaymentDialog = (payment: MobilePayment) => {
+    setSelectedPayment(payment);
+    setAdminNotes('');
+    setPaymentDialogOpen(true);
+  };
+
+  const handlePaymentAction = (status: 'approved' | 'rejected') => {
+    if (!selectedPayment) return;
+    approvePaymentMutation.mutate({ id: selectedPayment.id, status, adminNotes });
+  };
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'pending':
+        return <Badge variant="outline" className="border-orange-500 text-orange-500">Pending</Badge>;
+      case 'approved':
+        return <Badge variant="outline" className="border-green-500 text-green-500">Approved</Badge>;
+      case 'rejected':
+        return <Badge variant="outline" className="border-red-500 text-red-500">Rejected</Badge>;
+      default:
+        return <Badge variant="outline">{status}</Badge>;
+    }
+  };
+
+  const pendingCount = allPayments?.filter(p => p.status === 'pending').length || 0;
+  const approvedCount = allPayments?.filter(p => p.status === 'approved').length || 0;
+  const rejectedCount = allPayments?.filter(p => p.status === 'rejected').length || 0;
+
+  return (
+    <div className="max-w-7xl mx-auto space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight" data-testid="text-payments-title">Payment Management</h1>
+        <p className="text-muted-foreground">Review and manage mobile payment requests.</p>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-3">
+        <Card className={statusFilter === 'pending' ? 'border-orange-500' : ''} onClick={() => setStatusFilter('pending')} style={{ cursor: 'pointer' }}>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <Clock className="w-4 h-4 text-orange-500" />
+              Pending
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-orange-500" data-testid="text-pending-count">{pendingCount}</div>
+          </CardContent>
+        </Card>
+        <Card className={statusFilter === 'approved' ? 'border-green-500' : ''} onClick={() => setStatusFilter('approved')} style={{ cursor: 'pointer' }}>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <Check className="w-4 h-4 text-green-500" />
+              Approved
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-500" data-testid="text-approved-count">{approvedCount}</div>
+          </CardContent>
+        </Card>
+        <Card className={statusFilter === 'rejected' ? 'border-red-500' : ''} onClick={() => setStatusFilter('rejected')} style={{ cursor: 'pointer' }}>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <X className="w-4 h-4 text-red-500" />
+              Rejected
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-red-500" data-testid="text-rejected-count">{rejectedCount}</div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card>
         <CardHeader>
-          <div className="flex items-center gap-2">
-            <Smartphone className="w-5 h-5 text-red-500" />
-            <CardTitle>Pending Mobile Payments</CardTitle>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Smartphone className="w-5 h-5 text-primary" />
+              <CardTitle>Mobile Payments</CardTitle>
+            </div>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-[140px]" data-testid="select-status-filter">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="approved">Approved</SelectItem>
+                <SelectItem value="rejected">Rejected</SelectItem>
+                <SelectItem value="all">All</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           <CardDescription>
-            Approve or reject Airtel Money payments. Credits are typically processed at 10am, 12pm, and 4pm.
+            Review payment screenshots and approve or reject requests.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {paymentsLoading ? (
+          {isLoading ? (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
             </div>
-          ) : !pendingPayments || pendingPayments.length === 0 ? (
+          ) : !payments || payments.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center">
               <Clock className="w-12 h-12 text-muted-foreground mb-4 opacity-50" />
-              <p className="text-muted-foreground">No pending payments</p>
+              <p className="text-muted-foreground">No {statusFilter !== 'all' ? statusFilter : ''} payments found</p>
             </div>
           ) : (
             <>
@@ -620,37 +914,54 @@ function AdminHome() {
                         </div>
                       )}
 
-                      <div className="space-y-2">
-                        <Label>Admin Notes (optional)</Label>
-                        <Textarea
-                          value={adminNotes}
-                          onChange={(e) => setAdminNotes(e.target.value)}
-                          placeholder="Add notes about this payment..."
-                          className="h-20"
-                          data-testid="input-admin-notes"
-                        />
-                      </div>
+                      {selectedPayment.status === 'pending' && (
+                        <div className="space-y-2">
+                          <Label>Admin Notes (optional)</Label>
+                          <Textarea
+                            value={adminNotes}
+                            onChange={(e) => setAdminNotes(e.target.value)}
+                            placeholder="Add notes about this payment..."
+                            className="h-20"
+                            data-testid="input-admin-notes"
+                          />
+                        </div>
+                      )}
+
+                      {selectedPayment.adminNotes && selectedPayment.status !== 'pending' && (
+                        <div>
+                          <Label className="text-muted-foreground">Admin Notes</Label>
+                          <p className="text-sm mt-1">{selectedPayment.adminNotes}</p>
+                        </div>
+                      )}
                     </div>
                   )}
                   <DialogFooter className="gap-2">
-                    <Button 
-                      variant="destructive" 
-                      onClick={() => handlePaymentAction('rejected')}
-                      disabled={approvePaymentMutation.isPending}
-                      data-testid="button-reject-payment"
-                    >
-                      {approvePaymentMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <X className="w-4 h-4 mr-2" />}
-                      Reject
-                    </Button>
-                    <Button 
-                      onClick={() => handlePaymentAction('approved')}
-                      disabled={approvePaymentMutation.isPending}
-                      className="bg-green-600 hover:bg-green-700"
-                      data-testid="button-approve-payment"
-                    >
-                      {approvePaymentMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Check className="w-4 h-4 mr-2" />}
-                      Approve
-                    </Button>
+                    {selectedPayment?.status === 'pending' ? (
+                      <>
+                        <Button 
+                          variant="destructive" 
+                          onClick={() => handlePaymentAction('rejected')}
+                          disabled={approvePaymentMutation.isPending}
+                          data-testid="button-reject-payment"
+                        >
+                          {approvePaymentMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <X className="w-4 h-4 mr-2" />}
+                          Reject
+                        </Button>
+                        <Button 
+                          onClick={() => handlePaymentAction('approved')}
+                          disabled={approvePaymentMutation.isPending}
+                          className="bg-green-600 hover:bg-green-700"
+                          data-testid="button-approve-payment"
+                        >
+                          {approvePaymentMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Check className="w-4 h-4 mr-2" />}
+                          Approve
+                        </Button>
+                      </>
+                    ) : (
+                      <Button variant="outline" onClick={() => setPaymentDialogOpen(false)}>
+                        Close
+                      </Button>
+                    )}
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
@@ -661,13 +972,14 @@ function AdminHome() {
                     <TableHead>Phone</TableHead>
                     <TableHead>Amount</TableHead>
                     <TableHead>Credits</TableHead>
+                    <TableHead>Status</TableHead>
                     <TableHead>Screenshot</TableHead>
                     <TableHead>Submitted</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {pendingPayments.map((payment) => (
+                  {payments.map((payment) => (
                     <TableRow key={payment.id} data-testid={`row-payment-${payment.id}`}>
                       <TableCell className="font-medium">{payment.phoneNumber}</TableCell>
                       <TableCell>{formatPriceZAR(payment.amount)}</TableCell>
@@ -677,6 +989,7 @@ function AdminHome() {
                           {payment.credits}
                         </Badge>
                       </TableCell>
+                      <TableCell>{getStatusBadge(payment.status)}</TableCell>
                       <TableCell>
                         {payment.screenshotUrl ? (
                           <Badge variant="secondary" className="flex items-center gap-1 w-fit">
@@ -691,10 +1004,11 @@ function AdminHome() {
                       <TableCell className="text-right">
                         <Button 
                           size="sm" 
+                          variant={payment.status === 'pending' ? 'default' : 'outline'}
                           onClick={() => openPaymentDialog(payment)}
                           data-testid={`button-review-${payment.id}`}
                         >
-                          Review
+                          {payment.status === 'pending' ? 'Review' : 'View'}
                         </Button>
                       </TableCell>
                     </TableRow>
@@ -715,26 +1029,17 @@ function AdminSettings() {
   const [endpointUrl, setEndpointUrl] = useState("");
   const [systemPrompt, setSystemPrompt] = useState("");
   const [useCustomApi, setUseCustomApi] = useState(false);
-  const [connectionStatus, setConnectionStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const prevProviderRef = useRef<string | null>(null);
 
   const { data: config, isLoading } = useQuery({
     queryKey: ['admin-config'],
     queryFn: async () => {
-      const response = await fetch('/api/admin/config', {
-        credentials: 'include'
-      });
-
+      const response = await fetch('/api/admin/config', { credentials: 'include' });
       if (!response.ok) {
-        if (response.status === 403) {
-          throw new Error('FORBIDDEN');
-        }
-        if (response.status === 401) {
-          throw new Error('UNAUTHORIZED');
-        }
+        if (response.status === 403) throw new Error('FORBIDDEN');
+        if (response.status === 401) throw new Error('UNAUTHORIZED');
         throw new Error('Failed to fetch config');
       }
-
       return response.json();
     },
   });
@@ -769,17 +1074,11 @@ function AdminSettings() {
         body: JSON.stringify(configData),
         credentials: 'include'
       });
-
       if (!response.ok) {
-        if (response.status === 403) {
-          throw new Error('FORBIDDEN');
-        }
-        if (response.status === 401) {
-          throw new Error('UNAUTHORIZED');
-        }
+        if (response.status === 403) throw new Error('FORBIDDEN');
+        if (response.status === 401) throw new Error('UNAUTHORIZED');
         throw new Error('Failed to save configuration');
       }
-
       return response.json();
     },
     onSuccess: (data) => {
@@ -792,19 +1091,13 @@ function AdminSettings() {
         setUseCustomApi(data.useCustomApi === "true");
         prevProviderRef.current = data.provider || "groq";
       }
-      toast.success("Configuration Saved", {
-        description: "Your AI settings have been updated successfully."
-      });
+      toast.success("Configuration Saved", { description: "Your AI settings have been updated successfully." });
     },
     onError: (error: Error) => {
       if (error.message === 'FORBIDDEN') {
-        toast.error("Access Denied", {
-          description: "You do not have permission to update configuration.",
-        });
+        toast.error("Access Denied", { description: "You do not have permission to update configuration." });
       } else {
-        toast.error("Save Failed", {
-          description: error.message || "Failed to save configuration.",
-        });
+        toast.error("Save Failed", { description: error.message || "Failed to save configuration." });
       }
     }
   });
@@ -822,7 +1115,7 @@ function AdminSettings() {
   return (
     <div className="max-w-4xl mx-auto space-y-8">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">System Settings</h1>
+        <h1 className="text-3xl font-bold tracking-tight" data-testid="text-settings-title">System Settings</h1>
         <p className="text-muted-foreground">Configure global application parameters.</p>
       </div>
 
@@ -840,7 +1133,7 @@ function AdminSettings() {
               <div className="space-y-2">
                 <Label>Provider</Label>
                 <Select value={provider} onValueChange={setProvider}>
-                  <SelectTrigger>
+                  <SelectTrigger data-testid="select-provider">
                     <SelectValue placeholder="Select provider" />
                   </SelectTrigger>
                   <SelectContent>
@@ -852,7 +1145,7 @@ function AdminSettings() {
               <div className="space-y-2">
                 <Label>Model ID</Label>
                 <Select value={modelId} onValueChange={setModelId}>
-                  <SelectTrigger>
+                  <SelectTrigger data-testid="select-model">
                     <SelectValue placeholder="Select model" />
                   </SelectTrigger>
                   <SelectContent>
@@ -899,6 +1192,7 @@ function AdminSettings() {
                 className="h-32 font-mono text-xs"
                 value={systemPrompt}
                 onChange={(e) => setSystemPrompt(e.target.value)}
+                data-testid="input-system-prompt"
               />
             </div>
 
@@ -937,7 +1231,7 @@ function AdminSettings() {
                 <p className="text-sm text-muted-foreground">Daily limit for non-paying users.</p>
               </div>
               <div className="flex items-center gap-2">
-                 <Input type="number" defaultValue="1" className="w-20 text-right" />
+                 <Input type="number" defaultValue="1" className="w-20 text-right" data-testid="input-free-limit" />
               </div>
             </div>
             <Separator />
@@ -946,7 +1240,7 @@ function AdminSettings() {
                 <Label className="text-base">Enable Maintenance Mode</Label>
                 <p className="text-sm text-muted-foreground">Disable new signups and uploads.</p>
               </div>
-              <SwitchUI />
+              <SwitchUI data-testid="switch-maintenance-mode" />
             </div>
           </CardContent>
         </Card>
@@ -977,9 +1271,7 @@ function AdminLogs() {
       if (serviceFilter !== 'all') params.set('service', serviceFilter);
       if (levelFilter !== 'all') params.set('level', levelFilter);
       
-      const response = await fetch(`/api/admin/logs?${params}`, {
-        credentials: 'include'
-      });
+      const response = await fetch(`/api/admin/logs?${params}`, { credentials: 'include' });
       if (!response.ok) throw new Error('Failed to fetch logs');
       return response.json();
     },
@@ -1139,9 +1431,11 @@ export default function Admin() {
   return (
     <Layout isAdminLayout>
       <Switch>
-        <Route path="/admin" component={AdminHome} />
+        <Route path="/admin" component={AdminOverview} />
         <Route path="/admin/settings" component={AdminSettings} />
         <Route path="/admin/logs" component={AdminLogs} />
+        <Route path="/admin/users" component={AdminUsers} />
+        <Route path="/admin/payments" component={AdminPayments} />
       </Switch>
     </Layout>
   );

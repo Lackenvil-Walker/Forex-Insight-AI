@@ -793,11 +793,12 @@ export async function registerRoutes(
 
   app.get('/api/admin/mobile-payments', requireAdmin, async (req, res) => {
     try {
-      const payments = await storage.getPendingMobilePayments();
+      const status = req.query.status as string || undefined;
+      const payments = await storage.getAllMobilePayments(status);
       res.json(payments);
     } catch (error) {
-      console.error("Error fetching pending mobile payments:", error);
-      res.status(500).json({ error: 'Failed to fetch pending payments' });
+      console.error("Error fetching mobile payments:", error);
+      res.status(500).json({ error: 'Failed to fetch payments' });
     }
   });
 
