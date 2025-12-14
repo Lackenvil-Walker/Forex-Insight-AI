@@ -835,8 +835,7 @@ function AdminSettings() {
                     <SelectValue placeholder="Select provider" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="replit">Replit AI (Built-in)</SelectItem>
-                    <SelectItem value="groq">Groq</SelectItem>
+                    <SelectItem value="groq">Groq (Default)</SelectItem>
                     <SelectItem value="openai">OpenAI</SelectItem>
                   </SelectContent>
                 </Select>
@@ -855,12 +854,6 @@ function AdminSettings() {
                       </>
                     )}
                     {provider === 'openai' && (
-                      <>
-                        <SelectItem value="gpt-4o">GPT-4o</SelectItem>
-                        <SelectItem value="gpt-4o-mini">GPT-4o Mini</SelectItem>
-                      </>
-                    )}
-                    {provider === 'replit' && (
                       <>
                         <SelectItem value="gpt-4o">GPT-4o</SelectItem>
                         <SelectItem value="gpt-4o-mini">GPT-4o Mini</SelectItem>

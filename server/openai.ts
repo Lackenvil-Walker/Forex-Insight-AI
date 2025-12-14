@@ -19,20 +19,9 @@ export interface AIConfig {
 }
 
 function getAIClient(config: AIConfig): OpenAI {
-  const provider = config.provider || "replit";
+  const provider = config.provider || "groq";
   
   switch (provider) {
-    case "groq": {
-      const groqApiKey = process.env.GROQ_API_KEY;
-      if (!groqApiKey) {
-        throw new Error("Groq API key not configured. Please set GROQ_API_KEY in your environment secrets.");
-      }
-      return new OpenAI({
-        apiKey: groqApiKey,
-        baseURL: "https://api.groq.com/openai/v1",
-      });
-    }
-    
     case "openai": {
       const openaiApiKey = process.env.CUSTOM_OPENAI_API_KEY;
       if (!openaiApiKey) {
@@ -44,24 +33,27 @@ function getAIClient(config: AIConfig): OpenAI {
       });
     }
     
-    case "replit":
-    default:
+    case "groq":
+    default: {
+      const groqApiKey = process.env.GROQ_API_KEY;
+      if (!groqApiKey) {
+        throw new Error("Groq API key not configured. Please set GROQ_API_KEY in your environment secrets.");
+      }
       return new OpenAI({
-        baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
-        apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
+        apiKey: groqApiKey,
+        baseURL: "https://api.groq.com/openai/v1",
       });
+    }
   }
 }
 
 function getDefaultModel(provider: string): string {
   switch (provider) {
-    case "groq":
-      return "meta-llama/llama-4-scout-17b-16e-instruct";
     case "openai":
       return "gpt-4o";
-    case "replit":
+    case "groq":
     default:
-      return "gpt-4o";
+      return "meta-llama/llama-4-scout-17b-16e-instruct";
   }
 }
 
@@ -87,8 +79,8 @@ Analyze the chart carefully and provide actionable trading signals based on tech
   const prompt = systemPrompt || defaultPrompt;
   
   const aiConfig: AIConfig = config || {
-    provider: "replit",
-    modelId: "gpt-4o",
+    provider: "groq",
+    modelId: "meta-llama/llama-4-scout-17b-16e-instruct",
   };
   
   const client = getAIClient(aiConfig);
