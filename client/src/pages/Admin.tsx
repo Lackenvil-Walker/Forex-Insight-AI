@@ -953,6 +953,157 @@ function AdminSettings() {
   );
 }
 
+interface ServiceLog {
+  id: string;
+  service: string;
+  level: string;
+  message: string;
+  details: any;
+  userId: string | null;
+  createdAt: string;
+}
+
+function AdminLogs() {
+  const [serviceFilter, setServiceFilter] = useState<string>('all');
+  const [levelFilter, setLevelFilter] = useState<string>('all');
+
+  const { data: logs, isLoading, refetch } = useQuery<ServiceLog[]>({
+    queryKey: ['admin-logs', serviceFilter, levelFilter],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      params.set('limit', '200');
+      if (serviceFilter !== 'all') params.set('service', serviceFilter);
+      if (levelFilter !== 'all') params.set('level', levelFilter);
+      
+      const response = await fetch(`/api/admin/logs?${params}`, {
+        credentials: 'include'
+      });
+      if (!response.ok) throw new Error('Failed to fetch logs');
+      return response.json();
+    },
+    refetchInterval: 10000,
+  });
+
+  const getLevelColor = (level: string) => {
+    switch (level) {
+      case 'error': return 'bg-red-500/10 text-red-500 border-red-500/20';
+      case 'warn': return 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20';
+      case 'info': return 'bg-blue-500/10 text-blue-500 border-blue-500/20';
+      case 'debug': return 'bg-gray-500/10 text-gray-500 border-gray-500/20';
+      default: return 'bg-gray-500/10 text-gray-500 border-gray-500/20';
+    }
+  };
+
+  const getServiceColor = (service: string) => {
+    switch (service) {
+      case 'ai': return 'bg-purple-500/10 text-purple-500 border-purple-500/20';
+      case 'auth': return 'bg-green-500/10 text-green-500 border-green-500/20';
+      case 'payment': return 'bg-orange-500/10 text-orange-500 border-orange-500/20';
+      case 'paystack': return 'bg-teal-500/10 text-teal-500 border-teal-500/20';
+      case 'mobile_payment': return 'bg-pink-500/10 text-pink-500 border-pink-500/20';
+      case 'system': return 'bg-gray-500/10 text-gray-500 border-gray-500/20';
+      default: return 'bg-gray-500/10 text-gray-500 border-gray-500/20';
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold" data-testid="text-logs-title">Service Logs</h1>
+        <p className="text-muted-foreground">Monitor all system activities and debug issues.</p>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <CardTitle>Recent Logs</CardTitle>
+              <CardDescription>Last 200 log entries, auto-refreshing every 10 seconds</CardDescription>
+            </div>
+            <div className="flex gap-2 flex-wrap">
+              <Select value={serviceFilter} onValueChange={setServiceFilter}>
+                <SelectTrigger className="w-[140px]" data-testid="select-service-filter">
+                  <SelectValue placeholder="Service" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Services</SelectItem>
+                  <SelectItem value="ai">AI</SelectItem>
+                  <SelectItem value="auth">Auth</SelectItem>
+                  <SelectItem value="payment">Payment</SelectItem>
+                  <SelectItem value="paystack">Paystack</SelectItem>
+                  <SelectItem value="mobile_payment">Mobile Payment</SelectItem>
+                  <SelectItem value="system">System</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={levelFilter} onValueChange={setLevelFilter}>
+                <SelectTrigger className="w-[120px]" data-testid="select-level-filter">
+                  <SelectValue placeholder="Level" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Levels</SelectItem>
+                  <SelectItem value="error">Error</SelectItem>
+                  <SelectItem value="warn">Warning</SelectItem>
+                  <SelectItem value="info">Info</SelectItem>
+                  <SelectItem value="debug">Debug</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button variant="outline" size="sm" onClick={() => refetch()} data-testid="button-refresh-logs">
+                Refresh
+              </Button>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : !logs || logs.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              No logs found. Logs will appear here when services are used.
+            </div>
+          ) : (
+            <div className="space-y-2 max-h-[600px] overflow-y-auto">
+              {logs.map((log) => (
+                <div 
+                  key={log.id} 
+                  className="p-3 border rounded-lg bg-card hover:bg-accent/50 transition-colors"
+                  data-testid={`log-entry-${log.id}`}
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <Badge className={getLevelColor(log.level)} variant="outline">
+                        {log.level.toUpperCase()}
+                      </Badge>
+                      <Badge className={getServiceColor(log.service)} variant="outline">
+                        {log.service}
+                      </Badge>
+                      <span className="text-sm text-muted-foreground">
+                        {format(new Date(log.createdAt), 'MMM d, HH:mm:ss')}
+                      </span>
+                    </div>
+                    {log.userId && (
+                      <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">
+                        User: {log.userId.slice(0, 8)}...
+                      </span>
+                    )}
+                  </div>
+                  <p className="mt-2 text-sm">{log.message}</p>
+                  {log.details && Object.keys(log.details).length > 0 && (
+                    <pre className="mt-2 text-xs bg-muted p-2 rounded overflow-x-auto">
+                      {JSON.stringify(log.details, null, 2)}
+                    </pre>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
 export default function Admin() {
   const { isAdmin, isLoading, isGuest } = useAuth();
   const [, navigate] = useLocation();
@@ -988,6 +1139,7 @@ export default function Admin() {
       <Switch>
         <Route path="/admin" component={AdminHome} />
         <Route path="/admin/settings" component={AdminSettings} />
+        <Route path="/admin/logs" component={AdminLogs} />
       </Switch>
     </Layout>
   );

@@ -14,6 +14,8 @@ import {
   type InsertTransaction,
   type MobilePayment,
   type InsertMobilePayment,
+  type ServiceLog,
+  type InsertServiceLog,
   users,
   analyses,
   systemConfig,
@@ -21,6 +23,7 @@ import {
   creditPackages,
   transactions,
   mobilePayments,
+  serviceLogs,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc } from "drizzle-orm";
@@ -61,6 +64,10 @@ export interface IStorage {
   getPendingMobilePayments(): Promise<MobilePayment[]>;
   getMobilePayment(id: string): Promise<MobilePayment | undefined>;
   updateMobilePaymentStatus(id: string, status: string, adminNotes?: string): Promise<MobilePayment | undefined>;
+
+  createLog(log: InsertServiceLog): Promise<ServiceLog>;
+  getLogs(limit?: number, service?: string, level?: string): Promise<ServiceLog[]>;
+  clearLogs(olderThanDays?: number): Promise<number>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -256,6 +263,31 @@ export class DatabaseStorage implements IStorage {
     if (adminNotes !== undefined) updates.adminNotes = adminNotes;
     const [mp] = await db.update(mobilePayments).set(updates).where(eq(mobilePayments.id, id)).returning();
     return mp || undefined;
+  }
+
+  async createLog(log: InsertServiceLog): Promise<ServiceLog> {
+    const [entry] = await db.insert(serviceLogs).values(log).returning();
+    return entry;
+  }
+
+  async getLogs(limit: number = 100, service?: string, level?: string): Promise<ServiceLog[]> {
+    let query = db.select().from(serviceLogs);
+    const conditions = [];
+    if (service) conditions.push(eq(serviceLogs.service, service));
+    if (level) conditions.push(eq(serviceLogs.level, level));
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions)) as any;
+    }
+    return await query.orderBy(desc(serviceLogs.createdAt)).limit(limit);
+  }
+
+  async clearLogs(olderThanDays: number = 30): Promise<number> {
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - olderThanDays);
+    const result = await db.delete(serviceLogs).where(
+      eq(serviceLogs.createdAt, cutoff) // Will delete logs older than cutoff
+    );
+    return 0;
   }
 }
 

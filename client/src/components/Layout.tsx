@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link, useLocation } from 'wouter';
 import { useAuth } from '@/lib/auth';
-import { LayoutDashboard, LogOut, Settings, ShieldAlert, LineChart, LogIn, ArrowLeft } from 'lucide-react';
+import { LayoutDashboard, LogOut, Settings, ShieldAlert, LineChart, LogIn, ArrowLeft, ScrollText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Tooltip,
@@ -21,6 +21,7 @@ export function Layout({ children, isAdminLayout = false }: LayoutProps) {
   const baseNavItems = isAdminLayout ? [
     { icon: ShieldAlert, label: 'Admin Overview', href: '/admin' },
     { icon: Settings, label: 'System Settings', href: '/admin/settings' },
+    { icon: ScrollText, label: 'Service Logs', href: '/admin/logs' },
   ] : [
     { icon: LayoutDashboard, label: 'Dashboard', href: '/dashboard' },
     { icon: LineChart, label: 'My Analysis', href: '/dashboard/history' },

@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { analyzeForexChart } from "./openai";
 import { sendVerificationEmail } from "./email";
+import { logInfo, logError, logWarn } from "./logger";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
 
@@ -101,12 +102,14 @@ export async function registerRoutes(
       // Send verification email
       await sendVerificationEmail(email, verificationToken);
 
+      await logInfo('auth', `New user signup: ${email}`, { userId: user.id });
       res.json({ 
         message: 'Account created. Please check your email to verify your account.',
         requiresVerification: true 
       });
     } catch (error: any) {
       console.error('Signup error:', error);
+      await logError('auth', `Signup failed: ${error.message}`, { error: error.message });
       res.status(500).json({ error: 'Failed to create account' });
     }
   });
@@ -137,14 +140,16 @@ export async function registerRoutes(
       }
 
       // Regenerate session to prevent fixation attacks
-      req.session.regenerate((err: any) => {
+      req.session.regenerate(async (err: any) => {
         if (err) {
           console.error('Session regeneration error:', err);
+          await logError('auth', `Login session error: ${err.message}`, { email });
           return res.status(500).json({ error: 'Failed to log in' });
         }
         
         req.session.userId = user.id;
         
+        await logInfo('auth', `User logged in: ${email}`, { userId: user.id });
         res.json({ 
           id: user.id,
           email: user.email,
@@ -157,6 +162,7 @@ export async function registerRoutes(
       });
     } catch (error: any) {
       console.error('Login error:', error);
+      await logError('auth', `Login failed: ${error.message}`, { error: error.message });
       res.status(500).json({ error: 'Failed to log in' });
     }
   });
@@ -298,6 +304,8 @@ export async function registerRoutes(
         });
       }
 
+      await logInfo('ai', `Starting chart analysis`, { provider: config.provider, model: config.modelId }, userId);
+
       const analysisResult = await analyzeForexChart(imageData, config.systemPrompt, {
         provider: config.provider,
         modelId: config.modelId,
@@ -313,9 +321,11 @@ export async function registerRoutes(
 
       await storage.deductCredit(userId);
 
+      await logInfo('ai', `Chart analysis completed: ${analysisResult.trend} trend with ${analysisResult.confidence}% confidence`, { analysisId: analysis.id }, userId);
       res.json(analysis);
     } catch (error: any) {
       console.error("Error creating analysis:", error);
+      await logError('ai', `Chart analysis failed: ${error.message}`, { error: error.message }, getUserId(req));
       res.status(500).json({ error: error.message || 'Failed to create analysis' });
     }
   });
@@ -815,10 +825,38 @@ export async function registerRoutes(
         await storage.addCredits(payment.userId, payment.credits);
       }
 
+      await logInfo('mobile_payment', `Payment ${status} for ${payment.credits} credits`, { paymentId: id, userId: payment.userId }, req.session.userId);
       res.json(updatedPayment);
     } catch (error: any) {
       console.error("Error updating mobile payment:", error);
+      await logError('mobile_payment', `Failed to update payment: ${error.message}`, { error: error.message });
       res.status(500).json({ error: 'Failed to update payment' });
+    }
+  });
+
+  // Admin logs routes
+  app.get('/api/admin/logs', requireAdmin, async (req: any, res) => {
+    try {
+      const limit = parseInt(req.query.limit as string) || 100;
+      const service = req.query.service as string || undefined;
+      const level = req.query.level as string || undefined;
+      const logs = await storage.getLogs(limit, service, level);
+      res.json(logs);
+    } catch (error: any) {
+      console.error("Error fetching logs:", error);
+      res.status(500).json({ error: 'Failed to fetch logs' });
+    }
+  });
+
+  app.delete('/api/admin/logs', requireAdmin, async (req: any, res) => {
+    try {
+      const days = parseInt(req.query.days as string) || 30;
+      const deleted = await storage.clearLogs(days);
+      await logInfo('system', `Cleared logs older than ${days} days`, { deleted }, req.session.userId);
+      res.json({ message: `Cleared logs older than ${days} days`, deleted });
+    } catch (error: any) {
+      console.error("Error clearing logs:", error);
+      res.status(500).json({ error: 'Failed to clear logs' });
     }
   });
 
