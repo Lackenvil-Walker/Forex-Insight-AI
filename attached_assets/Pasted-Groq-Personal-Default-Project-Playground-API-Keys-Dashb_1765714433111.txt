@@ -1,0 +1,453 @@
+Groq
+
+Personal
+/
+
+Default Project
+Playground
+API Keys
+Dashboard
+Docs
+
+E
+
+Search
+K
+Docs
+API Reference
+Getting Started
+Overview
+Quickstart
+Models
+OpenAI Compatibility
+Responses API
+Rate Limits
+Templates
+API Reference
+Core Features
+Text Generation
+Speech to Text
+Text to Speech
+OCR and Image Recognition
+Reasoning
+Content Moderation
+Structured Outputs
+Prompt Caching
+Tools & Integrations
+Tool Use
+Integrations Catalog
+Compound (Agentic AI)
+Overview
+Systems
+Use Cases
+Guides
+Prompting Guide
+Assistant Message Prefilling
+Service Tiers
+Service Tiers
+Performance Tier
+Flex Processing
+Batch Processing
+Advanced
+LoRA Inference
+Production Readiness
+Production Checklist
+Optimizing Latency
+Security Onboarding
+Prometheus Metrics
+Account and Console
+Spend Limits
+Projects
+Model Permissions
+Billing FAQs
+Your Data
+Developer Resources
+SDK Libraries
+Groq Badge
+Developer Community
+OpenBench
+Error Codes
+Changelog
+Legal
+Policies & Notices
+Responses API
+Copy page
+
+Groq's Responses API is fully compatible with OpenAI's Responses API, making it easy to integrate advanced conversational AI capabilities into your applications. The Responses API supports both text and image inputs while producing text outputs, stateful conversations, and function calling to connect with external systems.
+
+The Responses API is currently in beta. Please let us know your feedback in our Community.
+
+Configuring OpenAI Client for Responses API
+To use the Responses API with OpenAI's client libraries, configure your client with your Groq API key and set the base URL to https://api.groq.com/openai/v1:
+
+
+Python
+
+import openai
+
+client = openai.OpenAI(
+    api_key="your-groq-api-key",
+    base_url="https://api.groq.com/openai/v1"
+)
+
+response = client.responses.create(
+    model="llama-3.3-70b-versatile",
+    input="Tell me a fun fact about the moon in one sentence.",
+)
+
+print(response.output_text)
+You can find your API key here.
+
+Multi-turn Conversations
+The Responses API on Groq doesn't support stateful conversations yet, so you'll need to keep track of the conversation history yourself and provide it in every request.
+
+
+Python
+
+import os
+from openai import OpenAI
+
+client = OpenAI(
+    api_key=os.environ.get("GROQ_API_KEY"),
+    base_url="https://api.groq.com/openai/v1",
+)
+
+messages = []
+
+
+def main():
+    while True:
+        user_input = input("You: ")
+
+        if user_input.lower().strip() == "stop":
+            print("Goodbye!")
+            break
+
+        messages.append({
+            "role": "user",
+            "content": user_input,
+        })
+
+        response = client.responses.create(
+            model="openai/gpt-oss-20b",
+            input=messages,
+        )
+
+        assistant_message = response.output_text
+        messages.extend(response.output)
+
+        print(f"Assistant: {assistant_message}")
+
+
+if __name__ == "__main__":
+    main()
+Image Inputs
+The Responses API supports image inputs with all vision-capable models. Here's an example of how to pass an image to the model:
+
+
+Python
+
+import os
+from openai import OpenAI
+
+client = OpenAI(
+    api_key=os.environ.get("GROQ_API_KEY"),
+    base_url="https://api.groq.com/openai/v1",
+)
+
+response = client.responses.create(
+    model="meta-llama/llama-4-scout-17b-16e-instruct",
+    input=[
+        {
+            "role": "user",
+            "content": [
+                {
+                    "type": "input_text",
+                    "text": "What are the main colors in this image? Give me the hex code for each color in a list."
+                },
+                {
+                    "type": "input_image",
+                    "detail": "auto",
+                    "image_url": "https://console.groq.com/og_cloud.png"
+                }
+            ]
+        }
+    ],
+)
+
+print(response.output_text)
+Built-In Tools
+In addition to a model's regular tool use capabilities, the Responses API supports various built-in tools to extend your model's capabilities.
+
+Model Support
+While all models support the Responses API, these built-in tools are only supported for the following models:
+
+Model ID	Browser Search	Code Execution
+openai/gpt-oss-20b
+
+✅	✅
+openai/gpt-oss-120b
+
+✅	✅
+Here are examples using code execution and browser search:
+
+Code Execution Example
+Enable your models to write and execute Python code for calculations, data analysis, and problem-solving - see our code execution documentation for more details.
+
+
+Python
+
+import openai
+
+client = openai.OpenAI(
+    api_key="your-groq-api-key",
+    base_url="https://api.groq.com/openai/v1"
+)
+
+response = client.responses.create(
+    model="openai/gpt-oss-20b",
+    input="What is 1312 X 3333? Output only the final answer.",
+    tool_choice="required",
+    tools=[
+        {
+            "type": "code_interpreter",
+            "container": {
+                "type": "auto"
+            }
+        }
+    ]
+)
+
+print(response.output_text)
+Browser Search Example
+Give your models access to real-time web content and up-to-date information - see our browser search documentation for more details.
+
+
+Python
+
+import openai
+
+client = openai.OpenAI(
+    api_key="your-groq-api-key",
+    base_url="https://api.groq.com/openai/v1"
+)
+
+response = client.responses.create(
+    model="openai/gpt-oss-20b",
+    input="Analyze the current weather in San Francisco and provide a detailed forecast.",
+    tool_choice="required",
+    tools=[
+        {
+            "type": "browser_search"
+        }
+    ]
+)
+
+print(response.output_text)
+Structured Outputs
+Use structured outputs to ensure the model's response follows a specific JSON schema. This is useful for extracting structured data from text, ensuring consistent response formats, or integrating with downstream systems that expect specific data structures.
+
+For a complete list of models that support structured outputs, see our structured outputs documentation.
+
+
+Python
+
+import os
+from openai import OpenAI
+
+client = OpenAI(
+    api_key=os.environ.get("GROQ_API_KEY"),
+    base_url="https://api.groq.com/openai/v1"
+)
+
+response = client.responses.create(
+    model="moonshotai/kimi-k2-instruct-0905",
+    instructions="Extract product review information from the text.",
+    input="I bought the UltraSound Headphones last week and I'm really impressed! The noise cancellation is amazing and the battery lasts all day. Sound quality is crisp and clear. I'd give it 4.5 out of 5 stars.",
+    text={
+        "format": {
+            "type": "json_schema",
+            "name": "product_review",
+            "schema": {
+                "type": "object",
+                "properties": {
+                    "product_name": {"type": "string"},
+                    "rating": {"type": "number"},
+                    "sentiment": {
+                        "type": "string",
+                        "enum": ["positive", "negative", "neutral"]
+                    },
+                    "key_features": {
+                        "type": "array",
+                        "items": {"type": "string"}
+                    }
+                },
+                "required": ["product_name", "rating", "sentiment", "key_features"],
+                "additionalProperties": False
+            }
+        }
+    }
+)
+
+print(response.output_text)
+Using a Schema Validation Library
+When working with Structured Outputs, you can use popular schema validation libraries like Zod for TypeScript and Pydantic for Python. These libraries provide type safety, runtime validation, and seamless integration with JSON Schema generation.
+
+
+Python
+
+import os
+from openai import OpenAI
+from pydantic import BaseModel
+
+
+class Recipe(BaseModel):
+    title: str
+    description: str
+    prep_time_minutes: int
+    cook_time_minutes: int
+    ingredients: list[str]
+    instructions: list[str]
+
+
+client = OpenAI(
+    api_key=os.environ.get("GROQ_API_KEY"),
+    base_url="https://api.groq.com/openai/v1",
+)
+
+response = client.responses.parse(
+    model="openai/gpt-oss-20b",
+    input=[
+        {"role": "system", "content": "Create a recipe."},
+        {
+            "role": "user",
+            "content": "Healthy chocolate coconut cake",
+        },
+    ],
+    text_format=Recipe,
+)
+
+recipe = response.output_parsed
+print(recipe)
+Reasoning
+Use reasoning to let the model produce an internal chain of thought before generating a response. This is useful for complex problem solving, multi-step agentic workflow planning, and scientific analysis.
+
+For a complete list of models that support reasoning, see our reasoning documentation.
+
+
+Python
+
+import openai
+
+client = openai.OpenAI(
+    api_key="your-groq-api-key",
+    base_url="https://api.groq.com/openai/v1"
+)
+
+response = client.responses.create(
+    model="openai/gpt-oss-20b",
+    input="How are AI models trained? Be brief.",
+    reasoning={
+        "effort": "low"
+    }
+)
+
+print(response.output_text)
+
+The reasoning traces can be found in the result.output array as type "reasoning":
+
+Model Context Protocol (MCP)
+The Responses API also supports the Model Context Protocol (MCP), an open-source standard that enables AI applications to connect with external systems like databases, APIs, and tools. MCP provides a standardized way for AI models to access and interact with your data and workflows.
+
+With MCP, you can build AI agents that access your codebase through GitHub, query databases with natural language, browse the web for real-time information, or connect to any API-based service like Slack, Notion, or Google Calendar.
+
+MCP Example
+Here's an example using Hugging Face's MCP server to search for trending AI models.
+
+
+Python
+
+import openai
+import os
+
+client = openai.OpenAI(
+    api_key=os.environ.get("GROQ_API_KEY"),
+    base_url="https://api.groq.com/openai/v1"
+)
+
+response = client.responses.create(
+    model="openai/gpt-oss-120b",
+    input="What models are trending on Huggingface?",
+    tools=[
+        {
+            "type": "mcp",
+            "server_label": "Huggingface",
+            "server_url": "https://huggingface.co/mcp",
+        }
+    ]
+)
+
+print(response)
+For comprehensive examples including GitHub integration, web search, and payment processing, see our full MCP documentation.
+
+Unsupported Features
+Although Groq's Responses API is mostly compatible with OpenAI's Responses API, there are a few features we don't support just yet:
+
+previous_response_id
+store
+truncation
+include
+safety_identifier
+prompt_cache_key
+prompt (reusable prompts)
+Want to see one of these features supported? Let us know on our Community forum!
+
+Detailed Usage Metrics
+To include detailed usage metrics for each request (such as exact inference time), set the following header:
+
+curl
+
+Groq-Beta: inference-metrics
+In the response body, the metadata field will include the following keys:
+
+completion_time: The time in seconds it took to generate the output
+prompt_time: The time in seconds it took to process the input prompt
+queue_time: The time in seconds the requests was queued before being processed
+total_time: The total time in seconds it took to process the request
+JSON
+
+{
+  "metadata": {
+    "completion_time": "2.567331286",
+    "prompt_time": "0.003652567",
+    "queue_time": "0.018393202",
+    "total_time": "2.570983853"
+  }
+}
+To calculate output tokens per second, combine the information from the usage field with the metadata field:
+
+curl
+
+output_tokens_per_second = usage.output_tokens / metadata.completion_time
+Next Steps
+Explore more advanced use cases in our built-in browser search and code execution documentation, or learn about connecting to external systems with MCP.
+
+Was this page helpful?
+
+Yes
+
+No
+
+Suggest Edits
+On this page
+Configuring OpenAI Client for Responses API
+Multi-turn Conversations
+Image Inputs
+Built-In Tools
+Structured Outputs
+Reasoning
+Model Context Protocol (MCP)
+Unsupported Features
+Detailed Usage Metrics
+Next Steps
+Responses API - GroqDocs

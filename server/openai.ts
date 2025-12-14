@@ -92,23 +92,33 @@ Analyze the chart carefully and provide actionable trading signals based on tech
   const model = aiConfig.modelId || getDefaultModel(aiConfig.provider);
 
   try {
+    // Build the message content based on provider
+    const messageContent: any[] = [
+      {
+        type: "text",
+        text: prompt
+      },
+      {
+        type: "image_url",
+        image_url: {
+          url: imageData,
+          detail: "high"
+        }
+      }
+    ];
+
+    console.log("Sending request to AI provider:", aiConfig.provider, "model:", model);
+    
     const response = await client.chat.completions.create({
       model,
       messages: [
         {
+          role: "system",
+          content: "You are a forex chart analysis expert. Always respond with valid JSON only."
+        },
+        {
           role: "user",
-          content: [
-            {
-              type: "text",
-              text: prompt
-            },
-            {
-              type: "image_url",
-              image_url: {
-                url: imageData
-              }
-            }
-          ]
+          content: messageContent
         }
       ],
       response_format: { type: "json_object" },
