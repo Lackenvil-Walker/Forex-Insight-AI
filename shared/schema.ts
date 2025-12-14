@@ -150,3 +150,22 @@ export const insertMobilePaymentSchema = createInsertSchema(mobilePayments).omit
 
 export type InsertMobilePayment = z.infer<typeof insertMobilePaymentSchema>;
 export type MobilePayment = typeof mobilePayments.$inferSelect;
+
+// Service logs for admin debugging
+export const serviceLogs = pgTable("service_logs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  service: varchar("service").notNull(),
+  level: varchar("level").notNull().default("info"),
+  message: text("message").notNull(),
+  details: jsonb("details"),
+  userId: varchar("user_id"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertServiceLogSchema = createInsertSchema(serviceLogs).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertServiceLog = z.infer<typeof insertServiceLogSchema>;
+export type ServiceLog = typeof serviceLogs.$inferSelect;
