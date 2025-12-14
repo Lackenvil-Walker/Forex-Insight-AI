@@ -787,6 +787,9 @@ function AdminSettings() {
       if (data) {
         setProvider(data.provider || "groq");
         setModelId(data.modelId || "meta-llama/llama-4-scout-17b-16e-instruct");
+        setSystemPrompt(data.systemPrompt || "");
+        setEndpointUrl(data.endpointUrl || "");
+        setUseCustomApi(data.useCustomApi === "true");
         prevProviderRef.current = data.provider || "groq";
       }
       toast.success("Configuration Saved", {
