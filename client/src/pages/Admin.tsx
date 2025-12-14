@@ -189,7 +189,7 @@ function AdminOverview() {
                 <p className="text-sm font-medium">Last Deployed</p>
                 <p className="text-xs text-muted-foreground" data-testid="text-deploy-date">
                   {systemInfo?.deployedAt 
-                    ? format(new Date(systemInfo.deployedAt), 'PPpp')
+                    ? format(new Date(systemInfo.deployedAt), 'MMM d, yyyy \'at\' h:mm:ss a')
                     : 'Not available'}
                 </p>
               </div>
