@@ -76,7 +76,12 @@ IMPORTANT: You must respond ONLY with a valid JSON object, no other text. Your r
 
 Analyze the chart carefully and provide actionable trading signals based on technical analysis. Remember: respond with JSON only.`;
 
-  const prompt = systemPrompt || defaultPrompt;
+  let prompt = systemPrompt || defaultPrompt;
+  
+  // Groq/OpenAI require "json" in the message when using response_format: json_object
+  if (!prompt.toLowerCase().includes('json')) {
+    prompt += '\n\nIMPORTANT: You must respond with valid JSON format only.';
+  }
   
   const aiConfig: AIConfig = config || {
     provider: "groq",
