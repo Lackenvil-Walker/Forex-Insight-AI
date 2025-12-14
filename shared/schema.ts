@@ -27,6 +27,7 @@ export const users = pgTable("users", {
   verificationTokenExpires: timestamp("verification_token_expires"),
   role: text("role").notNull().default("user"),
   plan: text("plan").notNull().default("starter"),
+  status: text("status").notNull().default("active"),
   stripeCustomerId: text("stripe_customer_id"),
   stripeSubscriptionId: text("stripe_subscription_id"),
   credits: integer("credits").notNull().default(0),
