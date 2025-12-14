@@ -535,6 +535,26 @@ export async function registerRoutes(
     }
   });
 
+  // System info endpoint (admin only)
+  const serverStartTime = new Date();
+  
+  app.get('/api/system-info', requireAdmin, async (req, res) => {
+    try {
+      const uptimeSeconds = Math.floor((Date.now() - serverStartTime.getTime()) / 1000);
+      
+      res.json({
+        version: '1.0.0',
+        deployedAt: serverStartTime.toISOString(),
+        uptime: uptimeSeconds,
+        nodeVersion: process.version,
+        environment: process.env.NODE_ENV || 'development'
+      });
+    } catch (error) {
+      console.error("Error fetching system info:", error);
+      res.status(500).json({ error: 'Failed to fetch system info' });
+    }
+  });
+
   app.post('/api/admin/users/:userId/credits', requireAdmin, async (req, res) => {
     try {
       const { userId } = req.params;

@@ -13,7 +13,7 @@ import { Switch as SwitchUI } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Users, DollarSign, Activity, AlertCircle, Save, CheckCircle2, XCircle, Loader2, Key, Plus, Minus, Coins, Pencil, Smartphone, Clock, Eye, Check, X, Ban, UserCheck, UserX, TrendingUp, CreditCard } from 'lucide-react';
+import { Users, DollarSign, Activity, AlertCircle, Save, CheckCircle2, XCircle, Loader2, Key, Plus, Minus, Coins, Pencil, Smartphone, Clock, Eye, Check, X, Ban, UserCheck, UserX, TrendingUp, CreditCard, Calendar, Rocket } from 'lucide-react';
 import { toast } from "sonner";
 import { formatDistanceToNow, format } from 'date-fns';
 import { queryClient } from '@/lib/queryClient';
@@ -56,6 +56,15 @@ function AdminOverview() {
     queryFn: async () => {
       const response = await fetch('/api/admin/mobile-payments', { credentials: 'include' });
       if (!response.ok) throw new Error('Failed to fetch payments');
+      return response.json();
+    },
+  });
+
+  const { data: systemInfo } = useQuery({
+    queryKey: ['system-info'],
+    queryFn: async () => {
+      const response = await fetch('/api/system-info', { credentials: 'include' });
+      if (!response.ok) throw new Error('Failed to fetch system info');
       return response.json();
     },
   });
@@ -163,6 +172,51 @@ function AdminOverview() {
           </CardContent>
         </Card>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Rocket className="w-5 h-5 text-primary" />
+            Deployment Info
+          </CardTitle>
+          <CardDescription>Application version and deployment details</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-4 md:grid-cols-3">
+            <div className="flex items-center gap-3 p-3 bg-muted rounded-lg">
+              <Calendar className="w-5 h-5 text-primary" />
+              <div>
+                <p className="text-sm font-medium">Last Deployed</p>
+                <p className="text-xs text-muted-foreground" data-testid="text-deploy-date">
+                  {systemInfo?.deployedAt 
+                    ? format(new Date(systemInfo.deployedAt), 'PPpp')
+                    : 'Not available'}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 p-3 bg-muted rounded-lg">
+              <Activity className="w-5 h-5 text-primary" />
+              <div>
+                <p className="text-sm font-medium">Version</p>
+                <p className="text-xs text-muted-foreground" data-testid="text-version">
+                  {systemInfo?.version || '1.0.0'}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 p-3 bg-muted rounded-lg">
+              <Clock className="w-5 h-5 text-primary" />
+              <div>
+                <p className="text-sm font-medium">Server Uptime</p>
+                <p className="text-xs text-muted-foreground" data-testid="text-uptime">
+                  {systemInfo?.uptime 
+                    ? formatDistanceToNow(new Date(Date.now() - systemInfo.uptime * 1000), { addSuffix: false })
+                    : 'Unknown'}
+                </p>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
