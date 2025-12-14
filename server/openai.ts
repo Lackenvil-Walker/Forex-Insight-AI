@@ -120,13 +120,59 @@ Analyze the chart carefully and provide actionable trading signals based on tech
       throw new Error("No response from AI");
     }
 
-    const result = JSON.parse(content) as ForexAnalysisResult;
+    console.log("AI Raw Response:", content);
     
-    if (!result.symbol || !result.trend || !result.confidence) {
-      throw new Error("Invalid response format from AI");
+    let parsed: any;
+    try {
+      parsed = JSON.parse(content);
+    } catch (parseError) {
+      console.error("Failed to parse AI response as JSON:", content);
+      throw new Error("AI returned invalid JSON response");
+    }
+    
+    // Handle case where response might be nested (e.g., { analysis: {...} } or { data: {...} })
+    let result: any = parsed;
+    if (parsed.analysis && typeof parsed.analysis === 'object') {
+      result = parsed.analysis;
+    } else if (parsed.data && typeof parsed.data === 'object') {
+      result = parsed.data;
+    } else if (parsed.result && typeof parsed.result === 'object') {
+      result = parsed.result;
+    }
+    
+    // Validate and provide defaults for missing fields
+    const finalResult: ForexAnalysisResult = {
+      symbol: result.symbol || result.pair || result.currency_pair || "Unknown",
+      timeframe: result.timeframe || result.time_frame || result.interval || "Unknown",
+      trend: ["bullish", "bearish", "neutral"].includes(result.trend?.toLowerCase()) 
+        ? result.trend.toLowerCase() as "bullish" | "bearish" | "neutral"
+        : "neutral",
+      confidence: typeof result.confidence === 'number' 
+        ? result.confidence 
+        : (parseInt(result.confidence) || 50),
+      entry: result.entry || result.entry_price || result.entryPrice || "N/A",
+      stopLoss: result.stopLoss || result.stop_loss || result.stoploss || "N/A",
+      takeProfit: Array.isArray(result.takeProfit) 
+        ? result.takeProfit 
+        : (Array.isArray(result.take_profit) 
+          ? result.take_profit 
+          : (result.takeProfit || result.take_profit ? [String(result.takeProfit || result.take_profit)] : [])),
+      reasoning: Array.isArray(result.reasoning) 
+        ? result.reasoning 
+        : (Array.isArray(result.reasons) 
+          ? result.reasons 
+          : (result.reasoning || result.analysis_notes ? [String(result.reasoning || result.analysis_notes)] : ["Analysis completed"]))
+    };
+    
+    console.log("Processed Result:", JSON.stringify(finalResult));
+    
+    // Only throw if we truly have no useful data
+    if (finalResult.symbol === "Unknown" && finalResult.trend === "neutral" && finalResult.entry === "N/A") {
+      console.error("AI response missing critical fields:", parsed);
+      throw new Error("AI could not analyze the chart properly. Please try a clearer chart image.");
     }
 
-    return result;
+    return finalResult;
   } catch (error: any) {
     console.error("Error analyzing forex chart:", error);
     throw new Error(`Failed to analyze chart: ${error.message}`);
