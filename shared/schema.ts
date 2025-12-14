@@ -62,8 +62,8 @@ export type Analysis = typeof analyses.$inferSelect;
 
 export const systemConfig = pgTable("system_config", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  provider: text("provider").notNull().default("openai"),
-  modelId: text("model_id").notNull().default("gpt-4o"),
+  provider: text("provider").notNull().default("groq"),
+  modelId: text("model_id").notNull().default("meta-llama/llama-4-scout-17b-16e-instruct"),
   endpointUrl: text("endpoint_url"),
   systemPrompt: text("system_prompt").notNull(),
   useCustomApi: text("use_custom_api").notNull().default("false"),

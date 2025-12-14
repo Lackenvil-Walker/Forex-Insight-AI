@@ -490,8 +490,8 @@ export async function registerRoutes(
       
       if (!config) {
         config = await storage.createSystemConfig({
-          provider: 'openai',
-          modelId: 'gpt-4o',
+          provider: 'groq',
+          modelId: 'meta-llama/llama-4-scout-17b-16e-instruct',
           systemPrompt: 'You are an expert forex trading analyst. Analyze the provided chart image and provide trading signals including entry points, stop loss, take profit levels, and detailed reasoning.'
         });
       }
@@ -511,8 +511,8 @@ export async function registerRoutes(
       
       if (!config) {
         config = await storage.createSystemConfig({
-          provider: provider || 'openai',
-          modelId: modelId || 'gpt-4o',
+          provider: provider || 'groq',
+          modelId: modelId || 'meta-llama/llama-4-scout-17b-16e-instruct',
           endpointUrl,
           systemPrompt: systemPrompt || 'You are an expert forex trading analyst.',
           useCustomApi: useCustomApi || 'false'

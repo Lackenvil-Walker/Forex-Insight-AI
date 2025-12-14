@@ -710,8 +710,8 @@ function AdminHome() {
 }
 
 function AdminSettings() {
-  const [provider, setProvider] = useState("openai");
-  const [modelId, setModelId] = useState("");
+  const [provider, setProvider] = useState("groq");
+  const [modelId, setModelId] = useState("meta-llama/llama-4-scout-17b-16e-instruct");
   const [endpointUrl, setEndpointUrl] = useState("");
   const [systemPrompt, setSystemPrompt] = useState("");
   const [useCustomApi, setUseCustomApi] = useState(false);
@@ -741,12 +741,12 @@ function AdminSettings() {
 
   useEffect(() => {
     if (config) {
-      setProvider(config.provider || "openai");
-      setModelId(config.modelId || "");
+      setProvider(config.provider || "groq");
+      setModelId(config.modelId || "meta-llama/llama-4-scout-17b-16e-instruct");
       setEndpointUrl(config.endpointUrl || "");
       setSystemPrompt(config.systemPrompt || "");
       setUseCustomApi(config.useCustomApi === "true");
-      prevProviderRef.current = config.provider || "openai";
+      prevProviderRef.current = config.provider || "groq";
     }
   }, [config]);
 
@@ -782,7 +782,13 @@ function AdminSettings() {
 
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['admin-config'] });
+      if (data) {
+        setProvider(data.provider || "groq");
+        setModelId(data.modelId || "meta-llama/llama-4-scout-17b-16e-instruct");
+        prevProviderRef.current = data.provider || "groq";
+      }
       toast.success("Configuration Saved", {
         description: "Your AI settings have been updated successfully."
       });
