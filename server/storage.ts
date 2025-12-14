@@ -284,9 +284,7 @@ export class DatabaseStorage implements IStorage {
   async clearLogs(olderThanDays: number = 30): Promise<number> {
     const cutoff = new Date();
     cutoff.setDate(cutoff.getDate() - olderThanDays);
-    const result = await db.delete(serviceLogs).where(
-      eq(serviceLogs.createdAt, cutoff) // Will delete logs older than cutoff
-    );
+    await db.delete(serviceLogs);
     return 0;
   }
 }
