@@ -33,6 +33,17 @@ function getAIClient(config: AIConfig): OpenAI {
       });
     }
     
+    case "gemini": {
+      const geminiApiKey = process.env.GEMINI_API_KEY;
+      if (!geminiApiKey) {
+        throw new Error("Gemini API key not configured. Please set GEMINI_API_KEY in your environment secrets.");
+      }
+      return new OpenAI({
+        apiKey: geminiApiKey,
+        baseURL: "https://generativelanguage.googleapis.com/v1beta/openai/",
+      });
+    }
+    
     case "groq":
     default: {
       const groqApiKey = process.env.GROQ_API_KEY;
@@ -51,6 +62,8 @@ function getDefaultModel(provider: string): string {
   switch (provider) {
     case "openai":
       return "gpt-4o";
+    case "gemini":
+      return "gemini-2.0-flash";
     case "groq":
     default:
       return "meta-llama/llama-4-scout-17b-16e-instruct";

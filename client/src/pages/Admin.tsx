@@ -1113,6 +1113,8 @@ function AdminSettings() {
     if (prevProviderRef.current !== null && prevProviderRef.current !== provider) {
       if (provider === 'groq') {
         setModelId('meta-llama/llama-4-scout-17b-16e-instruct');
+      } else if (provider === 'gemini') {
+        setModelId('gemini-2.0-flash');
       } else {
         setModelId('gpt-4o');
       }
@@ -1192,6 +1194,7 @@ function AdminSettings() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="groq">Groq (Default)</SelectItem>
+                    <SelectItem value="gemini">Gemini</SelectItem>
                     <SelectItem value="openai">OpenAI</SelectItem>
                   </SelectContent>
                 </Select>
@@ -1207,6 +1210,13 @@ function AdminSettings() {
                       <>
                         <SelectItem value="meta-llama/llama-4-scout-17b-16e-instruct">Llama 4 Scout (Vision)</SelectItem>
                         <SelectItem value="meta-llama/llama-4-maverick-17b-128e-instruct">Llama 4 Maverick (Vision)</SelectItem>
+                      </>
+                    )}
+                    {provider === 'gemini' && (
+                      <>
+                        <SelectItem value="gemini-2.0-flash">Gemini 2.0 Flash</SelectItem>
+                        <SelectItem value="gemini-1.5-pro">Gemini 1.5 Pro</SelectItem>
+                        <SelectItem value="gemini-1.5-flash">Gemini 1.5 Flash</SelectItem>
                       </>
                     )}
                     {provider === 'openai' && (
@@ -1225,6 +1235,16 @@ function AdminSettings() {
                 <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-md">
                   <p className="text-sm text-amber-600 dark:text-amber-400">
                     <strong>Setup:</strong> Add your Groq API key as <code className="bg-black/20 px-1 rounded">GROQ_API_KEY</code> in the Secrets tab.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {provider === 'gemini' && (
+              <div className="p-4 border border-primary/20 rounded-lg bg-primary/5">
+                <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-md">
+                  <p className="text-sm text-amber-600 dark:text-amber-400">
+                    <strong>Setup:</strong> Add your Gemini API key as <code className="bg-black/20 px-1 rounded">GEMINI_API_KEY</code> in the Secrets tab.
                   </p>
                 </div>
               </div>
