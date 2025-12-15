@@ -6,6 +6,7 @@ ForexAI is a full-stack web application that provides AI-powered forex chart ana
 
 ## Recent Changes
 
+- **December 15, 2025**: Added Gemini as an AI provider option. Admins can now switch between Groq, Gemini, and OpenAI in Settings.
 - **December 12, 2025**: Removed Stripe integration (not available in South Africa). Added Paystack payment gateway for credit purchases in ZAR. Users can now buy credit packages directly through the Pricing page.
 
 ## User Preferences
@@ -41,10 +42,10 @@ Preferred communication style: Simple, everyday language.
   - `usageTracking`: Daily usage limits per user
 
 ### AI Integration
-- **Primary**: Replit AI integration via OpenAI-compatible API
-- **Alternatives**: Support for Groq and OpenAI direct APIs
+- **Providers**: Groq (default), Gemini, OpenAI
+- **Environment Variables**: `GROQ_API_KEY`, `GEMINI_API_KEY`, `CUSTOM_OPENAI_API_KEY`
 - **Purpose**: Forex chart image analysis with structured trading recommendations
-- **Configuration**: Dynamic provider selection via system config
+- **Configuration**: Dynamic provider selection via system config (Admin Settings)
 
 ### Authentication Flow
 - Replit Auth handles user authentication via OIDC
