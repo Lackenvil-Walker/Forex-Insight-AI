@@ -1098,6 +1098,15 @@ function AdminSettings() {
     },
   });
 
+  const { data: apiKeysStatus } = useQuery({
+    queryKey: ['admin-api-keys-status'],
+    queryFn: async () => {
+      const response = await fetch('/api/admin/api-keys-status', { credentials: 'include' });
+      if (!response.ok) throw new Error('Failed to fetch API keys status');
+      return response.json();
+    },
+  });
+
   useEffect(() => {
     if (config) {
       setProvider(config.provider || "groq");
@@ -1291,6 +1300,68 @@ function AdminSettings() {
                 Save API Configuration
              </Button>
           </CardFooter>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <Key className="w-5 h-5 text-primary" />
+              <CardTitle>API Keys Status</CardTitle>
+            </div>
+            <CardDescription>Overview of configured API keys for AI providers.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="flex items-center justify-between p-4 bg-muted/30 rounded-lg border border-border" data-testid="status-groq-key">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-primary/10 rounded-lg">
+                    <Key className="w-4 h-4 text-primary" />
+                  </div>
+                  <div>
+                    <p className="font-medium text-sm">Groq</p>
+                    <p className="text-xs text-muted-foreground">GROQ_API_KEY</p>
+                  </div>
+                </div>
+                {apiKeysStatus?.groq ? (
+                  <CheckCircle2 className="w-5 h-5 text-green-500" />
+                ) : (
+                  <XCircle className="w-5 h-5 text-red-500" />
+                )}
+              </div>
+              <div className="flex items-center justify-between p-4 bg-muted/30 rounded-lg border border-border" data-testid="status-gemini-key">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-primary/10 rounded-lg">
+                    <Key className="w-4 h-4 text-primary" />
+                  </div>
+                  <div>
+                    <p className="font-medium text-sm">Gemini</p>
+                    <p className="text-xs text-muted-foreground">GEMINI_API_KEY</p>
+                  </div>
+                </div>
+                {apiKeysStatus?.gemini ? (
+                  <CheckCircle2 className="w-5 h-5 text-green-500" />
+                ) : (
+                  <XCircle className="w-5 h-5 text-red-500" />
+                )}
+              </div>
+              <div className="flex items-center justify-between p-4 bg-muted/30 rounded-lg border border-border" data-testid="status-openai-key">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-primary/10 rounded-lg">
+                    <Key className="w-4 h-4 text-primary" />
+                  </div>
+                  <div>
+                    <p className="font-medium text-sm">OpenAI</p>
+                    <p className="text-xs text-muted-foreground">CUSTOM_OPENAI_API_KEY</p>
+                  </div>
+                </div>
+                {apiKeysStatus?.openai ? (
+                  <CheckCircle2 className="w-5 h-5 text-green-500" />
+                ) : (
+                  <XCircle className="w-5 h-5 text-red-500" />
+                )}
+              </div>
+            </div>
+          </CardContent>
         </Card>
 
         <Card>

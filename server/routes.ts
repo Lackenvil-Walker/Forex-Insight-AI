@@ -541,6 +541,20 @@ export async function registerRoutes(
     }
   });
 
+  // API Keys status endpoint (admin only) - shows which keys are configured without exposing values
+  app.get('/api/admin/api-keys-status', requireAdmin, async (req, res) => {
+    try {
+      res.json({
+        groq: !!process.env.GROQ_API_KEY,
+        gemini: !!process.env.GEMINI_API_KEY,
+        openai: !!process.env.CUSTOM_OPENAI_API_KEY,
+      });
+    } catch (error) {
+      console.error("Error fetching API keys status:", error);
+      res.status(500).json({ error: 'Failed to fetch API keys status' });
+    }
+  });
+
   // System info endpoint (admin only)
   const serverStartTime = new Date();
   
