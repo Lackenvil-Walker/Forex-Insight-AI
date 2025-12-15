@@ -166,8 +166,19 @@ Remember: You MUST provide values for ALL fields including support, resistance, 
       max_tokens: 8192,
     });
 
+    console.log("AI Response received:", JSON.stringify({
+      id: response.id,
+      model: response.model,
+      choices_length: response.choices?.length,
+      finish_reason: response.choices?.[0]?.finish_reason,
+      message_role: response.choices?.[0]?.message?.role,
+      content_length: response.choices?.[0]?.message?.content?.length,
+      usage: response.usage
+    }, null, 2));
+
     const content = response.choices[0]?.message?.content;
     if (!content) {
+      console.error("Empty AI response. Full response object:", JSON.stringify(response, null, 2));
       throw new Error("No response from AI");
     }
 
