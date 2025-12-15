@@ -4,6 +4,7 @@ import { serveStatic } from "./static";
 import { createServer } from "http";
 import { setupSession } from "./session";
 import { seedAdminUser } from "./storage";
+import { logError } from "./logger";
 
 const app = express();
 const httpServer = createServer(app);
@@ -54,12 +55,27 @@ app.use((req, res, next) => {
   
   await seedAdminUser();
 
-  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+  app.use(async (err: any, req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";
+    
+    // Log all errors to database
+    const userId = (req as any).session?.userId || null;
+    const errorDetails = {
+      path: req.path,
+      method: req.method,
+      status,
+      errorName: err.name || 'Error',
+      errorMessage: err.message,
+      stack: err.stack?.split('\n').slice(0, 5).join('\n'), // First 5 lines of stack
+      userAgent: req.headers['user-agent'],
+      ip: req.ip,
+    };
+    
+    await logError('system', `${err.name || 'Error'}: ${message} on ${req.method} ${req.path}`, errorDetails, userId);
+    console.error(`[ERROR] ${req.method} ${req.path}:`, err.message);
 
     res.status(status).json({ message });
-    throw err;
   });
 
   if (process.env.NODE_ENV === "production") {
