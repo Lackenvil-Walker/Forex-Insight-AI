@@ -1109,6 +1109,131 @@ function AdminSettings() {
     },
   });
 
+  interface AiProviderData {
+    id: string;
+    name: string;
+    apiKeyEnvVar: string;
+    baseUrl: string;
+    models: string[];
+    isActive: boolean;
+  }
+
+  const { data: aiProviders, refetch: refetchProviders } = useQuery<AiProviderData[]>({
+    queryKey: ['admin-ai-providers'],
+    queryFn: async () => {
+      const response = await fetch('/api/admin/ai-providers', { credentials: 'include' });
+      if (!response.ok) throw new Error('Failed to fetch AI providers');
+      return response.json();
+    },
+  });
+
+  const [providerDialogOpen, setProviderDialogOpen] = useState(false);
+  const [editingProvider, setEditingProvider] = useState<AiProviderData | null>(null);
+  const [providerForm, setProviderForm] = useState({ name: '', apiKeyEnvVar: '', baseUrl: '', models: '', isActive: true });
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deletingProvider, setDeletingProvider] = useState<AiProviderData | null>(null);
+
+  const createProviderMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const response = await fetch('/api/admin/ai-providers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+        credentials: 'include'
+      });
+      if (!response.ok) throw new Error('Failed to create provider');
+      return response.json();
+    },
+    onSuccess: () => {
+      refetchProviders();
+      queryClient.invalidateQueries({ queryKey: ['admin-api-keys-status'] });
+      setProviderDialogOpen(false);
+      setProviderForm({ name: '', apiKeyEnvVar: '', baseUrl: '', models: '', isActive: true });
+      toast.success("Provider Created", { description: "AI provider has been added." });
+    },
+    onError: (error: Error) => toast.error("Failed", { description: error.message })
+  });
+
+  const updateProviderMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: any }) => {
+      const response = await fetch(`/api/admin/ai-providers/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+        credentials: 'include'
+      });
+      if (!response.ok) throw new Error('Failed to update provider');
+      return response.json();
+    },
+    onSuccess: () => {
+      refetchProviders();
+      queryClient.invalidateQueries({ queryKey: ['admin-api-keys-status'] });
+      setProviderDialogOpen(false);
+      setEditingProvider(null);
+      setProviderForm({ name: '', apiKeyEnvVar: '', baseUrl: '', models: '', isActive: true });
+      toast.success("Provider Updated", { description: "AI provider has been updated." });
+    },
+    onError: (error: Error) => toast.error("Failed", { description: error.message })
+  });
+
+  const deleteProviderMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const response = await fetch(`/api/admin/ai-providers/${id}`, {
+        method: 'DELETE',
+        credentials: 'include'
+      });
+      if (!response.ok) throw new Error('Failed to delete provider');
+      return response.json();
+    },
+    onSuccess: () => {
+      refetchProviders();
+      queryClient.invalidateQueries({ queryKey: ['admin-api-keys-status'] });
+      setDeleteDialogOpen(false);
+      setDeletingProvider(null);
+      toast.success("Provider Deleted", { description: "AI provider has been removed." });
+    },
+    onError: (error: Error) => toast.error("Failed", { description: error.message })
+  });
+
+  const seedProvidersMutation = useMutation({
+    mutationFn: async () => {
+      const response = await fetch('/api/admin/ai-providers/seed', {
+        method: 'POST',
+        credentials: 'include'
+      });
+      if (!response.ok) throw new Error('Failed to seed providers');
+      return response.json();
+    },
+    onSuccess: () => {
+      refetchProviders();
+      queryClient.invalidateQueries({ queryKey: ['admin-api-keys-status'] });
+      toast.success("Providers Seeded", { description: "Default AI providers have been added." });
+    },
+    onError: (error: Error) => toast.error("Failed", { description: error.message })
+  });
+
+  const openEditProvider = (p: AiProviderData) => {
+    setEditingProvider(p);
+    setProviderForm({ name: p.name, apiKeyEnvVar: p.apiKeyEnvVar, baseUrl: p.baseUrl, models: p.models.join(', '), isActive: p.isActive });
+    setProviderDialogOpen(true);
+  };
+
+  const openAddProvider = () => {
+    setEditingProvider(null);
+    setProviderForm({ name: '', apiKeyEnvVar: '', baseUrl: '', models: '', isActive: true });
+    setProviderDialogOpen(true);
+  };
+
+  const handleProviderSubmit = () => {
+    const modelsArray = providerForm.models.split(',').map(m => m.trim()).filter(Boolean);
+    const data = { ...providerForm, models: modelsArray };
+    if (editingProvider) {
+      updateProviderMutation.mutate({ id: editingProvider.id, data });
+    } else {
+      createProviderMutation.mutate(data);
+    }
+  };
+
   useEffect(() => {
     if (config) {
       setProvider(config.provider || "groq");
@@ -1210,9 +1335,17 @@ function AdminSettings() {
                     <SelectValue placeholder="Select provider" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="groq">Groq (Default)</SelectItem>
-                    <SelectItem value="gemini">Gemini</SelectItem>
-                    <SelectItem value="openai">OpenAI</SelectItem>
+                    {aiProviders && aiProviders.filter(p => p.isActive).length > 0 ? (
+                      aiProviders.filter(p => p.isActive).map((p) => (
+                        <SelectItem key={p.id} value={p.name.toLowerCase()}>{p.name}</SelectItem>
+                      ))
+                    ) : (
+                      <>
+                        <SelectItem value="groq">Groq (Default)</SelectItem>
+                        <SelectItem value="gemini">Gemini</SelectItem>
+                        <SelectItem value="openai">OpenAI</SelectItem>
+                      </>
+                    )}
                   </SelectContent>
                 </Select>
               </div>
@@ -1223,59 +1356,62 @@ function AdminSettings() {
                     <SelectValue placeholder="Select model" />
                   </SelectTrigger>
                   <SelectContent>
-                    {provider === 'groq' && (
-                      <>
-                        <SelectItem value="meta-llama/llama-4-scout-17b-16e-instruct">Llama 4 Scout (Vision)</SelectItem>
-                        <SelectItem value="meta-llama/llama-4-maverick-17b-128e-instruct">Llama 4 Maverick (Vision)</SelectItem>
-                      </>
-                    )}
-                    {provider === 'gemini' && (
-                      <>
-                        <SelectItem value="gemini-2.0-flash">Gemini 2.0 Flash</SelectItem>
-                        <SelectItem value="gemini-1.5-pro">Gemini 1.5 Pro</SelectItem>
-                        <SelectItem value="gemini-1.5-flash">Gemini 1.5 Flash</SelectItem>
-                      </>
-                    )}
-                    {provider === 'openai' && (
-                      <>
-                        <SelectItem value="gpt-4o">GPT-4o</SelectItem>
-                        <SelectItem value="gpt-4o-mini">GPT-4o Mini</SelectItem>
-                      </>
-                    )}
+                    {(() => {
+                      const activeProvider = aiProviders?.find(p => p.name.toLowerCase() === provider && p.isActive);
+                      if (activeProvider && activeProvider.models.length > 0) {
+                        return activeProvider.models.map((model) => (
+                          <SelectItem key={model} value={model}>{model}</SelectItem>
+                        ));
+                      }
+                      if (provider === 'groq') {
+                        return (
+                          <>
+                            <SelectItem value="meta-llama/llama-4-scout-17b-16e-instruct">Llama 4 Scout (Vision)</SelectItem>
+                            <SelectItem value="meta-llama/llama-4-maverick-17b-128e-instruct">Llama 4 Maverick (Vision)</SelectItem>
+                          </>
+                        );
+                      }
+                      if (provider === 'gemini') {
+                        return (
+                          <>
+                            <SelectItem value="gemini-2.0-flash">Gemini 2.0 Flash</SelectItem>
+                            <SelectItem value="gemini-1.5-pro">Gemini 1.5 Pro</SelectItem>
+                            <SelectItem value="gemini-1.5-flash">Gemini 1.5 Flash</SelectItem>
+                          </>
+                        );
+                      }
+                      if (provider === 'openai') {
+                        return (
+                          <>
+                            <SelectItem value="gpt-4o">GPT-4o</SelectItem>
+                            <SelectItem value="gpt-4o-mini">GPT-4o Mini</SelectItem>
+                          </>
+                        );
+                      }
+                      return null;
+                    })()}
                   </SelectContent>
                 </Select>
               </div>
             </div>
 
-            {provider === 'groq' && (
-              <div className="p-4 border border-primary/20 rounded-lg bg-primary/5">
-                <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-md">
-                  <p className="text-sm text-amber-600 dark:text-amber-400">
-                    <strong>Setup:</strong> Add your Groq API key as <code className="bg-black/20 px-1 rounded">GROQ_API_KEY</code> in the Secrets tab.
-                  </p>
+            {(() => {
+              const activeProvider = aiProviders?.find(p => p.name.toLowerCase() === provider && p.isActive);
+              const envVar = activeProvider?.apiKeyEnvVar || 
+                (provider === 'groq' ? 'GROQ_API_KEY' : 
+                 provider === 'gemini' ? 'GEMINI_API_KEY' : 
+                 provider === 'openai' ? 'CUSTOM_OPENAI_API_KEY' : 'API_KEY');
+              const providerName = activeProvider?.name || provider.charAt(0).toUpperCase() + provider.slice(1);
+              return (
+                <div className="p-4 border border-primary/20 rounded-lg bg-primary/5">
+                  <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-md">
+                    <p className="text-sm text-amber-600 dark:text-amber-400">
+                      <strong>Setup:</strong> Add your {providerName} API key as <code className="bg-black/20 px-1 rounded">{envVar}</code> in the Secrets tab.
+                    </p>
+                  </div>
                 </div>
-              </div>
-            )}
-
-            {provider === 'gemini' && (
-              <div className="p-4 border border-primary/20 rounded-lg bg-primary/5">
-                <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-md">
-                  <p className="text-sm text-amber-600 dark:text-amber-400">
-                    <strong>Setup:</strong> Add your Gemini API key as <code className="bg-black/20 px-1 rounded">GEMINI_API_KEY</code> in the Secrets tab.
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {provider === 'openai' && (
-              <div className="p-4 border border-primary/20 rounded-lg bg-primary/5">
-                <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-md">
-                  <p className="text-sm text-amber-600 dark:text-amber-400">
-                    <strong>Setup:</strong> Add your OpenAI API key as <code className="bg-black/20 px-1 rounded">CUSTOM_OPENAI_API_KEY</code> in the Secrets tab.
-                  </p>
-                </div>
-              </div>
-            )}
+              );
+            })()}
 
             <div className="space-y-2">
               <Label>System Prompt (Analysis Persona)</Label>
@@ -1371,6 +1507,124 @@ function AdminSettings() {
             </div>
           </CardContent>
         </Card>
+
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Key className="w-5 h-5 text-primary" />
+                <CardTitle>AI Providers</CardTitle>
+              </div>
+              <div className="flex gap-2">
+                {(!aiProviders || aiProviders.length === 0) && (
+                  <Button variant="outline" size="sm" onClick={() => seedProvidersMutation.mutate()} disabled={seedProvidersMutation.isPending} data-testid="button-seed-providers">
+                    {seedProvidersMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                    Seed Defaults
+                  </Button>
+                )}
+                <Button size="sm" onClick={openAddProvider} data-testid="button-add-provider">
+                  <Plus className="w-4 h-4 mr-1" /> Add Provider
+                </Button>
+              </div>
+            </div>
+            <CardDescription>Manage AI service providers and their configurations.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {!aiProviders || aiProviders.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                No providers configured. Click "Seed Defaults" to add Groq, Gemini, and OpenAI.
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>API Key Env Var</TableHead>
+                    <TableHead>Base URL</TableHead>
+                    <TableHead>Models</TableHead>
+                    <TableHead>Active</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {aiProviders.map((p) => (
+                    <TableRow key={p.id} data-testid={`row-provider-${p.id}`}>
+                      <TableCell className="font-medium">{p.name}</TableCell>
+                      <TableCell><code className="text-xs bg-muted px-1 rounded">{p.apiKeyEnvVar}</code></TableCell>
+                      <TableCell className="max-w-[200px] truncate text-xs">{p.baseUrl}</TableCell>
+                      <TableCell><Badge variant="outline">{p.models.length} models</Badge></TableCell>
+                      <TableCell>{p.isActive ? <CheckCircle2 className="w-4 h-4 text-green-500" /> : <XCircle className="w-4 h-4 text-red-500" />}</TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button size="sm" variant="outline" onClick={() => openEditProvider(p)} data-testid={`button-edit-provider-${p.id}`}>
+                            <Pencil className="w-3 h-3" />
+                          </Button>
+                          <Button size="sm" variant="destructive" onClick={() => { setDeletingProvider(p); setDeleteDialogOpen(true); }} data-testid={`button-delete-provider-${p.id}`}>
+                            <X className="w-3 h-3" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </CardContent>
+        </Card>
+
+        <Dialog open={providerDialogOpen} onOpenChange={setProviderDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>{editingProvider ? 'Edit Provider' : 'Add Provider'}</DialogTitle>
+              <DialogDescription>Configure the AI provider settings.</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label>Name</Label>
+                <Input value={providerForm.name} onChange={(e) => setProviderForm({...providerForm, name: e.target.value})} placeholder="e.g., Groq" data-testid="input-provider-name" />
+              </div>
+              <div className="space-y-2">
+                <Label>API Key Environment Variable</Label>
+                <Input value={providerForm.apiKeyEnvVar} onChange={(e) => setProviderForm({...providerForm, apiKeyEnvVar: e.target.value})} placeholder="e.g., GROQ_API_KEY" data-testid="input-provider-env" />
+              </div>
+              <div className="space-y-2">
+                <Label>Base URL</Label>
+                <Input value={providerForm.baseUrl} onChange={(e) => setProviderForm({...providerForm, baseUrl: e.target.value})} placeholder="e.g., https://api.groq.com/openai/v1" data-testid="input-provider-url" />
+              </div>
+              <div className="space-y-2">
+                <Label>Models (comma-separated)</Label>
+                <Textarea value={providerForm.models} onChange={(e) => setProviderForm({...providerForm, models: e.target.value})} placeholder="e.g., gpt-4o, gpt-4o-mini" className="h-20" data-testid="input-provider-models" />
+              </div>
+              <div className="flex items-center justify-between">
+                <Label>Active</Label>
+                <SwitchUI checked={providerForm.isActive} onCheckedChange={(v) => setProviderForm({...providerForm, isActive: v})} data-testid="switch-provider-active" />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setProviderDialogOpen(false)}>Cancel</Button>
+              <Button onClick={handleProviderSubmit} disabled={createProviderMutation.isPending || updateProviderMutation.isPending} data-testid="button-save-provider">
+                {(createProviderMutation.isPending || updateProviderMutation.isPending) ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                {editingProvider ? 'Update' : 'Create'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Delete Provider</DialogTitle>
+              <DialogDescription>Are you sure you want to delete "{deletingProvider?.name}"? This action cannot be undone.</DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
+              <Button variant="destructive" onClick={() => deletingProvider && deleteProviderMutation.mutate(deletingProvider.id)} disabled={deleteProviderMutation.isPending} data-testid="button-confirm-delete">
+                {deleteProviderMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                Delete
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         <Card>
           <CardHeader>
