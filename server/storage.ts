@@ -16,6 +16,8 @@ import {
   type InsertMobilePayment,
   type ServiceLog,
   type InsertServiceLog,
+  type AiProvider,
+  type InsertAiProvider,
   users,
   analyses,
   systemConfig,
@@ -24,6 +26,7 @@ import {
   transactions,
   mobilePayments,
   serviceLogs,
+  aiProviders,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc } from "drizzle-orm";
@@ -69,6 +72,13 @@ export interface IStorage {
   createLog(log: InsertServiceLog): Promise<ServiceLog>;
   getLogs(limit?: number, service?: string, level?: string): Promise<ServiceLog[]>;
   clearLogs(olderThanDays?: number): Promise<number>;
+
+  // AI Providers
+  getAiProviders(): Promise<AiProvider[]>;
+  getAiProvider(id: string): Promise<AiProvider | undefined>;
+  createAiProvider(provider: InsertAiProvider): Promise<AiProvider>;
+  updateAiProvider(id: string, updates: Partial<InsertAiProvider>): Promise<AiProvider | undefined>;
+  deleteAiProvider(id: string): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -294,6 +304,30 @@ export class DatabaseStorage implements IStorage {
     cutoff.setDate(cutoff.getDate() - olderThanDays);
     await db.delete(serviceLogs);
     return 0;
+  }
+
+  async getAiProviders(): Promise<AiProvider[]> {
+    return await db.select().from(aiProviders).orderBy(aiProviders.name);
+  }
+
+  async getAiProvider(id: string): Promise<AiProvider | undefined> {
+    const [provider] = await db.select().from(aiProviders).where(eq(aiProviders.id, id));
+    return provider || undefined;
+  }
+
+  async createAiProvider(provider: InsertAiProvider): Promise<AiProvider> {
+    const [newProvider] = await db.insert(aiProviders).values(provider).returning();
+    return newProvider;
+  }
+
+  async updateAiProvider(id: string, updates: Partial<InsertAiProvider>): Promise<AiProvider | undefined> {
+    const [provider] = await db.update(aiProviders).set(updates).where(eq(aiProviders.id, id)).returning();
+    return provider || undefined;
+  }
+
+  async deleteAiProvider(id: string): Promise<boolean> {
+    const result = await db.delete(aiProviders).where(eq(aiProviders.id, id));
+    return true;
   }
 }
 
