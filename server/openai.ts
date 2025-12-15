@@ -176,10 +176,18 @@ Remember: You MUST provide values for ALL fields including support, resistance, 
       usage: response.usage
     }, null, 2));
 
-    const content = response.choices[0]?.message?.content;
+    const message = response.choices[0]?.message;
+    const content = message?.content;
+    
+    // Check for refusal (OpenAI content moderation)
+    if (message?.refusal) {
+      console.error("AI refused to analyze:", message.refusal);
+      throw new Error(`AI provider refused the request: ${message.refusal}. Try using a different AI provider (Groq or Gemini) in Admin Settings.`);
+    }
+    
     if (!content) {
       console.error("Empty AI response. Full response object:", JSON.stringify(response, null, 2));
-      throw new Error("No response from AI");
+      throw new Error("No response from AI. Try using a different provider (Groq or Gemini) in Admin Settings.");
     }
 
     console.log("=== AI RAW RESPONSE START ===");
