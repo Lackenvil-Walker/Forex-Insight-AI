@@ -68,6 +68,8 @@ export const systemConfig = pgTable("system_config", {
   endpointUrl: text("endpoint_url"),
   systemPrompt: text("system_prompt").notNull(),
   useCustomApi: text("use_custom_api").notNull().default("false"),
+  freeLimit: integer("free_limit").notNull().default(1),
+  maintenanceMode: boolean("maintenance_mode").notNull().default(false),
 });
 
 export const insertSystemConfigSchema = createInsertSchema(systemConfig).omit({

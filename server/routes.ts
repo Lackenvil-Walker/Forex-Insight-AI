@@ -511,7 +511,7 @@ export async function registerRoutes(
 
   app.put('/api/admin/config', requireAdmin, async (req, res) => {
     try {
-      const { provider, modelId, endpointUrl, systemPrompt, useCustomApi } = req.body;
+      const { provider, modelId, endpointUrl, systemPrompt, useCustomApi, freeLimit, maintenanceMode } = req.body;
       
       let config = await storage.getSystemConfig();
       
@@ -521,7 +521,9 @@ export async function registerRoutes(
           modelId: modelId || 'meta-llama/llama-4-scout-17b-16e-instruct',
           endpointUrl,
           systemPrompt: systemPrompt || 'You are an expert forex trading analyst.',
-          useCustomApi: useCustomApi || 'false'
+          useCustomApi: useCustomApi || 'false',
+          freeLimit: freeLimit ?? 1,
+          maintenanceMode: maintenanceMode ?? false
         });
       } else {
         const updates: any = {};
@@ -530,6 +532,8 @@ export async function registerRoutes(
         if (endpointUrl !== undefined) updates.endpointUrl = endpointUrl;
         if (systemPrompt !== undefined) updates.systemPrompt = systemPrompt;
         if (useCustomApi !== undefined) updates.useCustomApi = useCustomApi;
+        if (freeLimit !== undefined) updates.freeLimit = freeLimit;
+        if (maintenanceMode !== undefined) updates.maintenanceMode = maintenanceMode;
         
         config = await storage.updateSystemConfig(config.id, updates);
       }

@@ -1083,6 +1083,8 @@ function AdminSettings() {
   const [endpointUrl, setEndpointUrl] = useState("");
   const [systemPrompt, setSystemPrompt] = useState("");
   const [useCustomApi, setUseCustomApi] = useState(false);
+  const [freeLimit, setFreeLimit] = useState(1);
+  const [maintenanceMode, setMaintenanceMode] = useState(false);
   const prevProviderRef = useRef<string | null>(null);
 
   const { data: config, isLoading } = useQuery({
@@ -1114,6 +1116,8 @@ function AdminSettings() {
       setEndpointUrl(config.endpointUrl || "");
       setSystemPrompt(config.systemPrompt || "");
       setUseCustomApi(config.useCustomApi === "true");
+      setFreeLimit(config.freeLimit ?? 1);
+      setMaintenanceMode(config.maintenanceMode ?? false);
       prevProviderRef.current = config.provider || "groq";
     }
   }, [config]);
@@ -1154,9 +1158,11 @@ function AdminSettings() {
         setSystemPrompt(data.systemPrompt || "");
         setEndpointUrl(data.endpointUrl || "");
         setUseCustomApi(data.useCustomApi === "true");
+        setFreeLimit(data.freeLimit ?? 1);
+        setMaintenanceMode(data.maintenanceMode ?? false);
         prevProviderRef.current = data.provider || "groq";
       }
-      toast.success("Configuration Saved", { description: "Your AI settings have been updated successfully." });
+      toast.success("Configuration Saved", { description: "Your settings have been updated successfully." });
     },
     onError: (error: Error) => {
       if (error.message === 'FORBIDDEN') {
@@ -1173,7 +1179,9 @@ function AdminSettings() {
       modelId,
       endpointUrl,
       systemPrompt,
-      useCustomApi: useCustomApi ? "true" : "false"
+      useCustomApi: useCustomApi ? "true" : "false",
+      freeLimit,
+      maintenanceMode
     });
   };
 
@@ -1376,7 +1384,14 @@ function AdminSettings() {
                 <p className="text-sm text-muted-foreground">Daily limit for non-paying users.</p>
               </div>
               <div className="flex items-center gap-2">
-                 <Input type="number" defaultValue="1" className="w-20 text-right" data-testid="input-free-limit" />
+                 <Input 
+                   type="number" 
+                   min="0"
+                   value={freeLimit} 
+                   onChange={(e) => setFreeLimit(parseInt(e.target.value) || 0)}
+                   className="w-20 text-right" 
+                   data-testid="input-free-limit" 
+                 />
               </div>
             </div>
             <Separator />
@@ -1385,9 +1400,19 @@ function AdminSettings() {
                 <Label className="text-base">Enable Maintenance Mode</Label>
                 <p className="text-sm text-muted-foreground">Disable new signups and uploads.</p>
               </div>
-              <SwitchUI data-testid="switch-maintenance-mode" />
+              <SwitchUI 
+                checked={maintenanceMode} 
+                onCheckedChange={setMaintenanceMode}
+                data-testid="switch-maintenance-mode" 
+              />
             </div>
           </CardContent>
+          <CardFooter className="bg-muted/10 border-t border-border py-4">
+             <Button className="ml-auto gap-2" onClick={handleSave} disabled={saveMutation.isPending} data-testid="button-save-limits">
+                {saveMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                Save Settings
+             </Button>
+          </CardFooter>
         </Card>
       </div>
     </div>
