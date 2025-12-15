@@ -548,14 +548,107 @@ export async function registerRoutes(
   // API Keys status endpoint (admin only) - shows which keys are configured without exposing values
   app.get('/api/admin/api-keys-status', requireAdmin, async (req, res) => {
     try {
-      res.json({
-        groq: !!process.env.GROQ_API_KEY,
-        gemini: !!process.env.GEMINI_API_KEY,
-        openai: !!process.env.CUSTOM_OPENAI_API_KEY,
-      });
+      const providers = await storage.getAiProviders();
+      const status: Record<string, boolean> = {};
+      for (const provider of providers) {
+        status[provider.name.toLowerCase()] = !!process.env[provider.apiKeyEnvVar];
+      }
+      // Fallback to hardcoded if no providers exist
+      if (Object.keys(status).length === 0) {
+        status.groq = !!process.env.GROQ_API_KEY;
+        status.gemini = !!process.env.GEMINI_API_KEY;
+        status.openai = !!process.env.CUSTOM_OPENAI_API_KEY;
+      }
+      res.json(status);
     } catch (error) {
       console.error("Error fetching API keys status:", error);
       res.status(500).json({ error: 'Failed to fetch API keys status' });
+    }
+  });
+
+  // AI Providers CRUD routes (admin only)
+  app.get('/api/admin/ai-providers', requireAdmin, async (req, res) => {
+    try {
+      const providers = await storage.getAiProviders();
+      res.json(providers);
+    } catch (error) {
+      console.error("Error fetching AI providers:", error);
+      res.status(500).json({ error: 'Failed to fetch AI providers' });
+    }
+  });
+
+  app.post('/api/admin/ai-providers', requireAdmin, async (req, res) => {
+    try {
+      const { name, apiKeyEnvVar, baseUrl, models, isActive } = req.body;
+      if (!name || !apiKeyEnvVar || !baseUrl || !models || !Array.isArray(models)) {
+        return res.status(400).json({ error: 'Name, apiKeyEnvVar, baseUrl, and models are required' });
+      }
+      const provider = await storage.createAiProvider({
+        name,
+        apiKeyEnvVar,
+        baseUrl,
+        models,
+        isActive: isActive ?? true,
+      });
+      res.json(provider);
+    } catch (error) {
+      console.error("Error creating AI provider:", error);
+      res.status(500).json({ error: 'Failed to create AI provider' });
+    }
+  });
+
+  app.put('/api/admin/ai-providers/:id', requireAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { name, apiKeyEnvVar, baseUrl, models, isActive } = req.body;
+      const updates: any = {};
+      if (name !== undefined) updates.name = name;
+      if (apiKeyEnvVar !== undefined) updates.apiKeyEnvVar = apiKeyEnvVar;
+      if (baseUrl !== undefined) updates.baseUrl = baseUrl;
+      if (models !== undefined) updates.models = models;
+      if (isActive !== undefined) updates.isActive = isActive;
+      const provider = await storage.updateAiProvider(id, updates);
+      if (!provider) {
+        return res.status(404).json({ error: 'Provider not found' });
+      }
+      res.json(provider);
+    } catch (error) {
+      console.error("Error updating AI provider:", error);
+      res.status(500).json({ error: 'Failed to update AI provider' });
+    }
+  });
+
+  app.delete('/api/admin/ai-providers/:id', requireAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteAiProvider(id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting AI provider:", error);
+      res.status(500).json({ error: 'Failed to delete AI provider' });
+    }
+  });
+
+  app.post('/api/admin/ai-providers/seed', requireAdmin, async (req, res) => {
+    try {
+      const existingProviders = await storage.getAiProviders();
+      if (existingProviders.length > 0) {
+        return res.json({ message: 'Providers already exist', providers: existingProviders });
+      }
+      const defaultProviders = [
+        { name: 'Groq', apiKeyEnvVar: 'GROQ_API_KEY', baseUrl: 'https://api.groq.com/openai/v1', models: ['meta-llama/llama-4-scout-17b-16e-instruct', 'meta-llama/llama-4-maverick-17b-128e-instruct'], isActive: true },
+        { name: 'Gemini', apiKeyEnvVar: 'GEMINI_API_KEY', baseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai/', models: ['gemini-2.0-flash', 'gemini-1.5-pro', 'gemini-1.5-flash'], isActive: true },
+        { name: 'OpenAI', apiKeyEnvVar: 'CUSTOM_OPENAI_API_KEY', baseUrl: 'https://api.openai.com/v1', models: ['gpt-4o', 'gpt-4o-mini'], isActive: true },
+      ];
+      const created = [];
+      for (const p of defaultProviders) {
+        const provider = await storage.createAiProvider(p);
+        created.push(provider);
+      }
+      res.json({ message: 'Default providers seeded', providers: created });
+    } catch (error) {
+      console.error("Error seeding AI providers:", error);
+      res.status(500).json({ error: 'Failed to seed AI providers' });
     }
   });
 
