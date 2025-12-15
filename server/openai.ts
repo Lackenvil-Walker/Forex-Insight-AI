@@ -62,19 +62,34 @@ export async function analyzeForexChart(
   systemPrompt?: string,
   config?: AIConfig
 ): Promise<ForexAnalysisResult> {
-  const defaultPrompt = `You are an expert forex trading analyst. Analyze the provided forex chart image and provide detailed trading signals.
+  const defaultPrompt = `You are an expert forex trading analyst with years of experience. Analyze the provided forex chart image and provide detailed, actionable trading signals.
 
-IMPORTANT: You must respond ONLY with a valid JSON object, no other text. Your response must be valid JSON format with the following fields:
-- symbol: The forex pair (e.g., "EUR/USD", "GBP/JPY")
-- timeframe: The chart timeframe (e.g., "1H", "4H", "1D")
-- trend: The current trend ("bullish", "bearish", or "neutral")
-- confidence: Your confidence level as a percentage (0-100)
-- entry: Suggested entry price as a string
-- stopLoss: Suggested stop loss price as a string
-- takeProfit: Array of take profit levels as strings (e.g., ["1.0890", "1.0950"])
-- reasoning: Array of strings explaining your analysis (e.g., ["Double bottom detected at support", "RSI showing bullish divergence"])
+CRITICAL INSTRUCTIONS:
+1. Look at the price axis on the chart to read EXACT price values
+2. Identify key support and resistance levels from the chart
+3. Calculate entry, stop loss, and take profit based on visible price levels
+4. You MUST provide specific price values - never leave entry, stopLoss, or takeProfit empty
 
-Analyze the chart carefully and provide actionable trading signals based on technical analysis. Remember: respond with JSON only.`;
+REQUIRED JSON RESPONSE FORMAT (respond with JSON only, no other text):
+{
+  "symbol": "The forex pair visible on chart (e.g., EUR/USD, GBP/JPY)",
+  "timeframe": "Chart timeframe (e.g., 1H, 4H, 1D, M15)",
+  "trend": "bullish" or "bearish" or "neutral",
+  "confidence": 0-100 (your confidence percentage),
+  "entry": "Specific entry price from chart (e.g., 1.2650)",
+  "stopLoss": "Stop loss price below/above recent swing (e.g., 1.2600)",
+  "takeProfit": ["TP1 price", "TP2 price"] (e.g., ["1.2700", "1.2750"]),
+  "reasoning": ["Technical reason 1", "Technical reason 2", "Technical reason 3"]
+}
+
+ANALYSIS GUIDELINES:
+- For BULLISH trades: entry near support, stop loss below support, take profit at resistance
+- For BEARISH trades: entry near resistance, stop loss above resistance, take profit at support
+- Read the actual price values from the Y-axis of the chart
+- Identify candlestick patterns, trend lines, and key levels
+- Base your confidence on the strength of the setup
+
+Remember: You MUST provide specific numeric prices for entry, stopLoss, and takeProfit fields.`;
 
   let prompt = systemPrompt || defaultPrompt;
   
