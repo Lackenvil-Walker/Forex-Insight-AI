@@ -145,7 +145,9 @@ Remember: You MUST provide specific numeric prices for entry, stopLoss, and take
       throw new Error("No response from AI");
     }
 
-    console.log("AI Raw Response:", content);
+    console.log("=== AI RAW RESPONSE START ===");
+    console.log(content);
+    console.log("=== AI RAW RESPONSE END ===");
     
     let parsed: any;
     try {
@@ -155,41 +157,104 @@ Remember: You MUST provide specific numeric prices for entry, stopLoss, and take
       throw new Error("AI returned invalid JSON response");
     }
     
+    console.log("Parsed JSON keys:", Object.keys(parsed));
+    
     // Handle case where response might be nested (e.g., { analysis: {...} } or { data: {...} })
     let result: any = parsed;
     if (parsed.analysis && typeof parsed.analysis === 'object') {
       result = parsed.analysis;
+      console.log("Found nested 'analysis' object");
     } else if (parsed.data && typeof parsed.data === 'object') {
       result = parsed.data;
+      console.log("Found nested 'data' object");
     } else if (parsed.result && typeof parsed.result === 'object') {
       result = parsed.result;
+      console.log("Found nested 'result' object");
+    } else if (parsed.signal && typeof parsed.signal === 'object') {
+      result = parsed.signal;
+      console.log("Found nested 'signal' object");
+    } else if (parsed.trading_signal && typeof parsed.trading_signal === 'object') {
+      result = parsed.trading_signal;
+      console.log("Found nested 'trading_signal' object");
     }
     
-    // Validate and provide defaults for missing fields
-    const finalResult: ForexAnalysisResult = {
-      symbol: result.symbol || result.pair || result.currency_pair || "Unknown",
-      timeframe: result.timeframe || result.time_frame || result.interval || "Unknown",
-      trend: ["bullish", "bearish", "neutral"].includes(result.trend?.toLowerCase()) 
-        ? result.trend.toLowerCase() as "bullish" | "bearish" | "neutral"
-        : "neutral",
-      confidence: typeof result.confidence === 'number' 
-        ? result.confidence 
-        : (parseInt(result.confidence) || 50),
-      entry: result.entry || result.entry_price || result.entryPrice || "N/A",
-      stopLoss: result.stopLoss || result.stop_loss || result.stoploss || "N/A",
-      takeProfit: Array.isArray(result.takeProfit) 
-        ? result.takeProfit 
-        : (Array.isArray(result.take_profit) 
-          ? result.take_profit 
-          : (result.takeProfit || result.take_profit ? [String(result.takeProfit || result.take_profit)] : [])),
-      reasoning: Array.isArray(result.reasoning) 
-        ? result.reasoning 
-        : (Array.isArray(result.reasons) 
-          ? result.reasons 
-          : (result.reasoning || result.analysis_notes ? [String(result.reasoning || result.analysis_notes)] : ["Analysis completed"]))
+    console.log("Result object keys:", Object.keys(result));
+    console.log("Result values:", JSON.stringify(result, null, 2));
+    
+    // Helper to find value from multiple possible keys
+    const findValue = (obj: any, ...keys: string[]): any => {
+      for (const key of keys) {
+        if (obj[key] !== undefined && obj[key] !== null && obj[key] !== '') {
+          return obj[key];
+        }
+        // Also check camelCase and snake_case variations
+        const camelCase = key.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
+        const snakeCase = key.replace(/([A-Z])/g, '_$1').toLowerCase();
+        if (obj[camelCase] !== undefined && obj[camelCase] !== null && obj[camelCase] !== '') {
+          return obj[camelCase];
+        }
+        if (obj[snakeCase] !== undefined && obj[snakeCase] !== null && obj[snakeCase] !== '') {
+          return obj[snakeCase];
+        }
+      }
+      return undefined;
     };
     
-    console.log("Processed Result:", JSON.stringify(finalResult));
+    // Validate and provide defaults for missing fields
+    const rawSymbol = findValue(result, 'symbol', 'pair', 'currency_pair', 'instrument', 'ticker', 'asset');
+    const rawTimeframe = findValue(result, 'timeframe', 'time_frame', 'interval', 'period', 'tf');
+    const rawTrend = findValue(result, 'trend', 'direction', 'bias', 'signal_type', 'market_direction');
+    const rawConfidence = findValue(result, 'confidence', 'confidence_level', 'probability', 'score');
+    const rawEntry = findValue(result, 'entry', 'entry_price', 'entryPrice', 'entry_point', 'suggested_entry', 'buy_price', 'sell_price');
+    const rawStopLoss = findValue(result, 'stopLoss', 'stop_loss', 'stoploss', 'sl', 'stop');
+    const rawTakeProfit = findValue(result, 'takeProfit', 'take_profit', 'takeprofit', 'tp', 'targets', 'target', 'take_profit_levels');
+    const rawReasoning = findValue(result, 'reasoning', 'reasons', 'analysis', 'analysis_notes', 'explanation', 'rationale', 'notes');
+    
+    console.log("Extracted raw values:", { rawSymbol, rawTimeframe, rawTrend, rawConfidence, rawEntry, rawStopLoss, rawTakeProfit, rawReasoning });
+    
+    // Process trend value
+    let trendValue: "bullish" | "bearish" | "neutral" = "neutral";
+    if (rawTrend) {
+      const trendLower = String(rawTrend).toLowerCase();
+      if (trendLower.includes('bull') || trendLower.includes('up') || trendLower.includes('long') || trendLower.includes('buy')) {
+        trendValue = "bullish";
+      } else if (trendLower.includes('bear') || trendLower.includes('down') || trendLower.includes('short') || trendLower.includes('sell')) {
+        trendValue = "bearish";
+      }
+    }
+    
+    // Process take profit array
+    let takeProfitArray: string[] = [];
+    if (Array.isArray(rawTakeProfit)) {
+      takeProfitArray = rawTakeProfit.map(tp => String(tp));
+    } else if (rawTakeProfit) {
+      takeProfitArray = [String(rawTakeProfit)];
+    }
+    
+    // Process reasoning array
+    let reasoningArray: string[] = [];
+    if (Array.isArray(rawReasoning)) {
+      reasoningArray = rawReasoning.map(r => String(r));
+    } else if (rawReasoning) {
+      reasoningArray = [String(rawReasoning)];
+    } else {
+      reasoningArray = ["Technical analysis completed based on chart patterns"];
+    }
+    
+    const finalResult: ForexAnalysisResult = {
+      symbol: rawSymbol ? String(rawSymbol) : "Unknown",
+      timeframe: rawTimeframe ? String(rawTimeframe) : "Unknown",
+      trend: trendValue,
+      confidence: typeof rawConfidence === 'number' ? rawConfidence : (parseInt(String(rawConfidence)) || 50),
+      entry: rawEntry ? String(rawEntry) : "N/A",
+      stopLoss: rawStopLoss ? String(rawStopLoss) : "N/A",
+      takeProfit: takeProfitArray,
+      reasoning: reasoningArray
+    };
+    
+    console.log("=== FINAL PROCESSED RESULT ===");
+    console.log(JSON.stringify(finalResult, null, 2));
+    console.log("=== END FINAL RESULT ===");
     
     // Only throw if we truly have no useful data
     if (finalResult.symbol === "Unknown" && finalResult.trend === "neutral" && finalResult.entry === "N/A") {
