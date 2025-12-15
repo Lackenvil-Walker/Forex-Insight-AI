@@ -2,47 +2,34 @@ version: '3.8'
 
 services:
   app:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    build: .
     ports:
       - "5000:5000"
     environment:
       - NODE_ENV=production
-      - DATABASE_URL=postgresql://forexai:forexai_password@db:5432/forexai
-      - SESSION_SECRET=${SESSION_SECRET:-your-super-secret-session-key-change-in-production}
-      - GROQ_API_KEY=${GROQ_API_KEY:-}
-      - PAYSTACK_SECRET_KEY=${PAYSTACK_SECRET_KEY:-}
+      - PORT=5000
+      - DATABASE_URL=${DATABASE_URL}
+      - SESSION_SECRET=${SESSION_SECRET}
+      - GROQ_API_KEY=${GROQ_API_KEY}
+      - CUSTOM_OPENAI_API_KEY=${CUSTOM_OPENAI_API_KEY:-}
       - RESEND_API_KEY=${RESEND_API_KEY:-}
+      - PAYSTACK_SECRET_KEY=${PAYSTACK_SECRET_KEY:-}
+      - ADMIN_EMAILS=${ADMIN_EMAILS:-}
     depends_on:
-      db:
-        condition: service_healthy
+      - db
     restart: unless-stopped
-    networks:
-      - forexai-network
 
   db:
-    image: postgres:16-alpine
+    image: postgres:15-alpine
     environment:
       - POSTGRES_USER=forexai
-      - POSTGRES_PASSWORD=forexai_password
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-forexai_password}
       - POSTGRES_DB=forexai
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U forexai -d forexai"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
     restart: unless-stopped
-    networks:
-      - forexai-network
 
 volumes:
   postgres_data:
-
-networks:
-  forexai-network:
-    driver: bridge
