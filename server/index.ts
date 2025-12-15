@@ -9,8 +9,36 @@ import { logError } from "./logger";
 const app = express();
 const httpServer = createServer(app);
 
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ extended: false, limit: '50mb' }));
+app.use((req, res, next) => {
+  express.json({ limit: '50mb' })(req, res, (err) => {
+    if (err) {
+      const userId = (req as any).session?.userId || null;
+      logError('system', `Body parser error: ${err.message}`, {
+        path: req.path,
+        method: req.method,
+        errorName: err.name || 'Error',
+        errorMessage: err.message,
+        contentLength: req.headers['content-length'],
+        contentType: req.headers['content-type'],
+      }, userId);
+    }
+    next(err);
+  });
+});
+app.use((req, res, next) => {
+  express.urlencoded({ extended: false, limit: '50mb' })(req, res, (err) => {
+    if (err) {
+      const userId = (req as any).session?.userId || null;
+      logError('system', `URL parser error: ${err.message}`, {
+        path: req.path,
+        method: req.method,
+        errorName: err.name || 'Error',
+        errorMessage: err.message,
+      }, userId);
+    }
+    next(err);
+  });
+});
 
 export function log(message: string, source = "express") {
   const formattedTime = new Date().toLocaleTimeString("en-US", {

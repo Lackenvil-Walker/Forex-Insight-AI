@@ -325,7 +325,11 @@ export async function registerRoutes(
       res.json(analysis);
     } catch (error: any) {
       console.error("Error creating analysis:", error);
-      await logError('ai', `Chart analysis failed: ${error.message}`, { error: error.message }, getUserId(req));
+      await logError('ai', `Chart analysis failed: ${error.message}`, { 
+        error: error.message,
+        stack: error.stack?.split('\n').slice(0, 5).join('\n'),
+        name: error.name || 'Error'
+      }, getUserId(req));
       res.status(500).json({ error: error.message || 'Failed to create analysis' });
     }
   });
