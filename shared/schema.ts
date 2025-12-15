@@ -79,6 +79,25 @@ export const insertSystemConfigSchema = createInsertSchema(systemConfig).omit({
 export type InsertSystemConfig = z.infer<typeof insertSystemConfigSchema>;
 export type SystemConfig = typeof systemConfig.$inferSelect;
 
+// AI Providers configuration table
+export const aiProviders = pgTable("ai_providers", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: varchar("name").notNull(),
+  apiKeyEnvVar: varchar("api_key_env_var").notNull(),
+  baseUrl: text("base_url").notNull(),
+  models: text("models").array().notNull(),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertAiProviderSchema = createInsertSchema(aiProviders).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertAiProvider = z.infer<typeof insertAiProviderSchema>;
+export type AiProvider = typeof aiProviders.$inferSelect;
+
 export const usageTracking = pgTable("usage_tracking", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull().references(() => users.id),
