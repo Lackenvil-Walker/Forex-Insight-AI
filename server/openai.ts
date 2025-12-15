@@ -8,6 +8,11 @@ export interface ForexAnalysisResult {
   entry: string;
   stopLoss: string;
   takeProfit: string[];
+  support: string;
+  resistance: string;
+  momentum: string;
+  rsi: string;
+  volume: string;
   reasoning: string[];
 }
 
@@ -75,13 +80,14 @@ export async function analyzeForexChart(
   systemPrompt?: string,
   config?: AIConfig
 ): Promise<ForexAnalysisResult> {
-  const defaultPrompt = `You are an expert forex trading analyst with years of experience. Analyze the provided forex chart image and provide detailed, actionable trading signals.
+  const defaultPrompt = `You are an expert forex trading analyst with years of experience. Analyze the provided forex chart image and provide detailed, actionable trading signals with comprehensive technical analysis.
 
 CRITICAL INSTRUCTIONS:
 1. Look at the price axis on the chart to read EXACT price values
 2. Identify key support and resistance levels from the chart
 3. Calculate entry, stop loss, and take profit based on visible price levels
-4. You MUST provide specific price values - never leave entry, stopLoss, or takeProfit empty
+4. Analyze trend direction, momentum, RSI conditions, and volume if visible
+5. You MUST provide specific price values - never leave any field empty
 
 REQUIRED JSON RESPONSE FORMAT (respond with JSON only, no other text):
 {
@@ -92,6 +98,11 @@ REQUIRED JSON RESPONSE FORMAT (respond with JSON only, no other text):
   "entry": "Specific entry price from chart (e.g., 1.2650)",
   "stopLoss": "Stop loss price below/above recent swing (e.g., 1.2600)",
   "takeProfit": ["TP1 price", "TP2 price"] (e.g., ["1.2700", "1.2750"]),
+  "support": "Key support level price (e.g., 1.2580)",
+  "resistance": "Key resistance level price (e.g., 1.2720)",
+  "momentum": "Momentum assessment (e.g., Strong Bullish, Weak Bearish, Neutral, Increasing, Decreasing)",
+  "rsi": "RSI reading or estimate (e.g., 65 - Neutral, 75 - Overbought, 30 - Oversold)",
+  "volume": "Volume analysis (e.g., High, Low, Increasing, Decreasing, Above Average)",
   "reasoning": ["Technical reason 1", "Technical reason 2", "Technical reason 3"]
 }
 
@@ -100,9 +111,11 @@ ANALYSIS GUIDELINES:
 - For BEARISH trades: entry near resistance, stop loss above resistance, take profit at support
 - Read the actual price values from the Y-axis of the chart
 - Identify candlestick patterns, trend lines, and key levels
-- Base your confidence on the strength of the setup
+- Estimate RSI based on price action if not shown (overbought >70, oversold <30)
+- Assess momentum from candle size, trend strength, and price velocity
+- Evaluate volume if visible, otherwise estimate based on candle body size
 
-Remember: You MUST provide specific numeric prices for entry, stopLoss, and takeProfit fields.`;
+Remember: You MUST provide values for ALL fields including support, resistance, momentum, rsi, and volume.`;
 
   let prompt = systemPrompt || defaultPrompt;
   
@@ -221,9 +234,14 @@ Remember: You MUST provide specific numeric prices for entry, stopLoss, and take
     const rawEntry = findValue(result, 'entry', 'entry_price', 'entryPrice', 'entry_point', 'suggested_entry', 'buy_price', 'sell_price');
     const rawStopLoss = findValue(result, 'stopLoss', 'stop_loss', 'stoploss', 'sl', 'stop');
     const rawTakeProfit = findValue(result, 'takeProfit', 'take_profit', 'takeprofit', 'tp', 'targets', 'target', 'take_profit_levels');
+    const rawSupport = findValue(result, 'support', 'support_level', 'supportLevel', 'key_support');
+    const rawResistance = findValue(result, 'resistance', 'resistance_level', 'resistanceLevel', 'key_resistance');
+    const rawMomentum = findValue(result, 'momentum', 'momentum_status', 'price_momentum');
+    const rawRsi = findValue(result, 'rsi', 'RSI', 'rsi_value', 'rsi_reading');
+    const rawVolume = findValue(result, 'volume', 'volume_analysis', 'volume_status');
     const rawReasoning = findValue(result, 'reasoning', 'reasons', 'analysis', 'analysis_notes', 'explanation', 'rationale', 'notes');
     
-    console.log("Extracted raw values:", { rawSymbol, rawTimeframe, rawTrend, rawConfidence, rawEntry, rawStopLoss, rawTakeProfit, rawReasoning });
+    console.log("Extracted raw values:", { rawSymbol, rawTimeframe, rawTrend, rawConfidence, rawEntry, rawStopLoss, rawTakeProfit, rawSupport, rawResistance, rawMomentum, rawRsi, rawVolume, rawReasoning });
     
     // Process trend value
     let trendValue: "bullish" | "bearish" | "neutral" = "neutral";
@@ -262,6 +280,11 @@ Remember: You MUST provide specific numeric prices for entry, stopLoss, and take
       entry: rawEntry ? String(rawEntry) : "N/A",
       stopLoss: rawStopLoss ? String(rawStopLoss) : "N/A",
       takeProfit: takeProfitArray,
+      support: rawSupport ? String(rawSupport) : "N/A",
+      resistance: rawResistance ? String(rawResistance) : "N/A",
+      momentum: rawMomentum ? String(rawMomentum) : "N/A",
+      rsi: rawRsi ? String(rawRsi) : "N/A",
+      volume: rawVolume ? String(rawVolume) : "N/A",
       reasoning: reasoningArray
     };
     

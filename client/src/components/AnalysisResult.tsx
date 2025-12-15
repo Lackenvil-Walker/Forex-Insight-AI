@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { TrendingUp, TrendingDown, AlertTriangle, Target, Zap, Shield, ChevronRight } from 'lucide-react';
+import { TrendingUp, TrendingDown, Target, Zap, Shield, ChevronRight, ArrowUpDown, Activity, BarChart3 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
@@ -14,6 +14,11 @@ interface AnalysisResultProps {
     entry: string;
     stopLoss: string;
     takeProfit: string[];
+    support?: string;
+    resistance?: string;
+    momentum?: string;
+    rsi?: string;
+    volume?: string;
     reasoning: string[];
   } | null;
 }
@@ -24,9 +29,7 @@ export function AnalysisResult({ data }: AnalysisResultProps) {
   const isBullish = data.trend === 'bullish';
   const TrendIcon = isBullish ? TrendingUp : TrendingDown;
   const trendColor = isBullish ? 'text-green-500' : 'text-red-500';
-  const badgeVariant = isBullish ? 'default' : 'destructive'; // Using default for green (primary), destructive for red
 
-  // Typing effect for reasoning
   const [visibleReasoning, setVisibleReasoning] = useState<string[]>([]);
 
   useEffect(() => {
@@ -48,21 +51,21 @@ export function AnalysisResult({ data }: AnalysisResultProps) {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="w-full max-w-4xl mx-auto mt-8"
+      className="w-full max-w-5xl mx-auto mt-8"
     >
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Signal Card */}
-        <Card className="md:col-span-2 border-primary/20 bg-card/50 backdrop-blur-sm overflow-hidden relative">
+        <Card className="lg:col-span-2 border-primary/20 bg-card/50 backdrop-blur-sm overflow-hidden relative">
           <div className={`absolute top-0 left-0 w-1 h-full ${isBullish ? 'bg-primary' : 'bg-destructive'}`} />
           <CardHeader className="pb-2">
             <div className="flex justify-between items-start">
               <div>
-                <p className="text-sm text-muted-foreground font-mono mb-1">AI SIGNAL DETECTED</p>
-                <CardTitle className="text-3xl font-bold flex items-center gap-3">
+                <p className="text-sm text-muted-foreground font-mono mb-1" data-testid="text-signal-label">AI SIGNAL DETECTED</p>
+                <CardTitle className="text-3xl font-bold flex items-center gap-3" data-testid="text-symbol">
                   {data.symbol} <span className="text-muted-foreground text-lg font-normal">{data.timeframe}</span>
                 </CardTitle>
               </div>
-              <Badge variant="outline" className={`text-lg px-4 py-1 ${trendColor} border-current`}>
+              <Badge variant="outline" className={`text-lg px-4 py-1 ${trendColor} border-current`} data-testid="badge-confidence">
                 {data.confidence}% CONFIDENCE
               </Badge>
             </div>
@@ -74,7 +77,7 @@ export function AnalysisResult({ data }: AnalysisResultProps) {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Market Structure</p>
-                <p className={`text-2xl font-bold ${trendColor} uppercase tracking-wide`}>
+                <p className={`text-2xl font-bold ${trendColor} uppercase tracking-wide`} data-testid="text-trend">
                   Strong {data.trend}
                 </p>
               </div>
@@ -82,18 +85,19 @@ export function AnalysisResult({ data }: AnalysisResultProps) {
 
             <Separator className="my-6 bg-border/50" />
 
-            <div className="grid grid-cols-3 gap-4">
+            {/* Trading Levels */}
+            <div className="grid grid-cols-3 gap-4 mb-6">
               <div className="space-y-1">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Zap className="w-4 h-4" /> Entry Zone
                 </div>
-                <p className="text-xl font-mono font-bold">{data.entry}</p>
+                <p className="text-xl font-mono font-bold" data-testid="text-entry">{data.entry}</p>
               </div>
               <div className="space-y-1">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Shield className="w-4 h-4 text-destructive" /> Stop Loss
                 </div>
-                <p className="text-xl font-mono font-bold text-destructive">{data.stopLoss}</p>
+                <p className="text-xl font-mono font-bold text-destructive" data-testid="text-stoploss">{data.stopLoss}</p>
               </div>
               <div className="space-y-1">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -101,9 +105,45 @@ export function AnalysisResult({ data }: AnalysisResultProps) {
                 </div>
                 <div className="flex flex-col">
                   {data.takeProfit.map((tp, idx) => (
-                    <span key={idx} className="text-lg font-mono font-bold text-primary">{tp}</span>
+                    <span key={idx} className="text-lg font-mono font-bold text-primary" data-testid={`text-tp-${idx}`}>{tp}</span>
                   ))}
                 </div>
+              </div>
+            </div>
+
+            <Separator className="my-6 bg-border/50" />
+
+            {/* Technical Indicators */}
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              <div className="p-3 rounded-lg bg-muted/30 border border-border/50">
+                <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
+                  <TrendingDown className="w-3 h-3 text-green-500" /> Support
+                </div>
+                <p className="text-lg font-mono font-semibold text-green-500" data-testid="text-support">{data.support || 'N/A'}</p>
+              </div>
+              <div className="p-3 rounded-lg bg-muted/30 border border-border/50">
+                <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
+                  <TrendingUp className="w-3 h-3 text-red-500" /> Resistance
+                </div>
+                <p className="text-lg font-mono font-semibold text-red-500" data-testid="text-resistance">{data.resistance || 'N/A'}</p>
+              </div>
+              <div className="p-3 rounded-lg bg-muted/30 border border-border/50">
+                <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
+                  <ArrowUpDown className="w-3 h-3 text-blue-500" /> Momentum
+                </div>
+                <p className="text-sm font-semibold text-blue-500" data-testid="text-momentum">{data.momentum || 'N/A'}</p>
+              </div>
+              <div className="p-3 rounded-lg bg-muted/30 border border-border/50">
+                <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
+                  <Activity className="w-3 h-3 text-purple-500" /> RSI
+                </div>
+                <p className="text-sm font-semibold text-purple-500" data-testid="text-rsi">{data.rsi || 'N/A'}</p>
+              </div>
+              <div className="p-3 rounded-lg bg-muted/30 border border-border/50 md:col-span-2">
+                <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
+                  <BarChart3 className="w-3 h-3 text-amber-500" /> Volume
+                </div>
+                <p className="text-sm font-semibold text-amber-500" data-testid="text-volume">{data.volume || 'N/A'}</p>
               </div>
             </div>
           </CardContent>
@@ -118,7 +158,7 @@ export function AnalysisResult({ data }: AnalysisResultProps) {
               AI REASONING ENGINE
             </CardTitle>
           </CardHeader>
-          <CardContent className="pt-4 h-[300px] overflow-y-auto custom-scrollbar">
+          <CardContent className="pt-4 h-[400px] overflow-y-auto custom-scrollbar">
             <ul className="space-y-4">
               {visibleReasoning.map((reason, idx) => (
                 <motion.li
