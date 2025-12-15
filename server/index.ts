@@ -9,11 +9,14 @@ import { logError } from "./logger";
 const app = express();
 const httpServer = createServer(app);
 
+const ENV = process.env.NODE_ENV || 'development';
+
 app.use((req, res, next) => {
   express.json({ limit: '50mb' })(req, res, (err) => {
     if (err) {
       const userId = (req as any).session?.userId || null;
-      logError('system', `Body parser error: ${err.message}`, {
+      logError('system', `[${ENV.toUpperCase()}] Body parser error: ${err.message}`, {
+        environment: ENV,
         path: req.path,
         method: req.method,
         errorName: err.name || 'Error',
@@ -29,7 +32,8 @@ app.use((req, res, next) => {
   express.urlencoded({ extended: false, limit: '50mb' })(req, res, (err) => {
     if (err) {
       const userId = (req as any).session?.userId || null;
-      logError('system', `URL parser error: ${err.message}`, {
+      logError('system', `[${ENV.toUpperCase()}] URL parser error: ${err.message}`, {
+        environment: ENV,
         path: req.path,
         method: req.method,
         errorName: err.name || 'Error',
@@ -90,18 +94,19 @@ app.use((req, res, next) => {
     // Log all errors to database
     const userId = (req as any).session?.userId || null;
     const errorDetails = {
+      environment: ENV,
       path: req.path,
       method: req.method,
       status,
       errorName: err.name || 'Error',
       errorMessage: err.message,
-      stack: err.stack?.split('\n').slice(0, 5).join('\n'), // First 5 lines of stack
+      stack: err.stack?.split('\n').slice(0, 5).join('\n'),
       userAgent: req.headers['user-agent'],
       ip: req.ip,
     };
     
-    await logError('system', `${err.name || 'Error'}: ${message} on ${req.method} ${req.path}`, errorDetails, userId);
-    console.error(`[ERROR] ${req.method} ${req.path}:`, err.message);
+    await logError('system', `[${ENV.toUpperCase()}] ${err.name || 'Error'}: ${message} on ${req.method} ${req.path}`, errorDetails, userId);
+    console.error(`[${ENV.toUpperCase()}] [ERROR] ${req.method} ${req.path}:`, err.message);
 
     res.status(status).json({ message });
   });

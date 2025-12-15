@@ -324,8 +324,10 @@ export async function registerRoutes(
       await logInfo('ai', `Chart analysis completed: ${analysisResult.trend} trend with ${analysisResult.confidence}% confidence`, { analysisId: analysis.id }, userId);
       res.json(analysis);
     } catch (error: any) {
-      console.error("Error creating analysis:", error);
-      await logError('ai', `Chart analysis failed: ${error.message}`, { 
+      const env = process.env.NODE_ENV || 'development';
+      console.error(`[${env.toUpperCase()}] Error creating analysis:`, error);
+      await logError('ai', `[${env.toUpperCase()}] Chart analysis failed: ${error.message}`, { 
+        environment: env,
         error: error.message,
         stack: error.stack?.split('\n').slice(0, 5).join('\n'),
         name: error.name || 'Error'
