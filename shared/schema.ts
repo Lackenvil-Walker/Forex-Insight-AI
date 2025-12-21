@@ -173,6 +173,22 @@ export const insertMobilePaymentSchema = createInsertSchema(mobilePayments).omit
 export type InsertMobilePayment = z.infer<typeof insertMobilePaymentSchema>;
 export type MobilePayment = typeof mobilePayments.$inferSelect;
 
+// Encrypted API keys storage (for self-hosted deployments)
+export const apiKeys = pgTable("api_keys", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  keyName: varchar("key_name").unique().notNull(),
+  encryptedValue: text("encrypted_value").notNull(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertApiKeySchema = createInsertSchema(apiKeys).omit({
+  id: true,
+  updatedAt: true,
+});
+
+export type InsertApiKey = z.infer<typeof insertApiKeySchema>;
+export type ApiKey = typeof apiKeys.$inferSelect;
+
 // Service logs for admin debugging
 export const serviceLogs = pgTable("service_logs", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),

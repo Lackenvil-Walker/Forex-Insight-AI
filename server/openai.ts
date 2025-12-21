@@ -1,4 +1,5 @@
 import OpenAI from "openai";
+import { getGroqApiKey, getGeminiApiKey, getOpenAIApiKey } from "./apiKeyHelper";
 
 export interface ForexAnalysisResult {
   symbol: string;
@@ -23,14 +24,14 @@ export interface AIConfig {
   useCustomApi?: string;
 }
 
-function getAIClient(config: AIConfig): OpenAI {
+async function getAIClient(config: AIConfig): Promise<OpenAI> {
   const provider = config.provider || "groq";
   
   switch (provider) {
     case "openai": {
-      const openaiApiKey = process.env.CUSTOM_OPENAI_API_KEY;
+      const openaiApiKey = await getOpenAIApiKey();
       if (!openaiApiKey) {
-        throw new Error("OpenAI API key not configured. Please set CUSTOM_OPENAI_API_KEY in your environment secrets.");
+        throw new Error("OpenAI API key not configured. Please set it in Admin > Settings > API Keys.");
       }
       return new OpenAI({
         apiKey: openaiApiKey,
@@ -39,9 +40,9 @@ function getAIClient(config: AIConfig): OpenAI {
     }
     
     case "gemini": {
-      const geminiApiKey = process.env.GEMINI_API_KEY;
+      const geminiApiKey = await getGeminiApiKey();
       if (!geminiApiKey) {
-        throw new Error("Gemini API key not configured. Please set GEMINI_API_KEY in your environment secrets.");
+        throw new Error("Gemini API key not configured. Please set it in Admin > Settings > API Keys.");
       }
       return new OpenAI({
         apiKey: geminiApiKey,
@@ -51,9 +52,9 @@ function getAIClient(config: AIConfig): OpenAI {
     
     case "groq":
     default: {
-      const groqApiKey = process.env.GROQ_API_KEY;
+      const groqApiKey = await getGroqApiKey();
       if (!groqApiKey) {
-        throw new Error("Groq API key not configured. Please set GROQ_API_KEY in your environment secrets.");
+        throw new Error("Groq API key not configured. Please set it in Admin > Settings > API Keys.");
       }
       return new OpenAI({
         apiKey: groqApiKey,
@@ -129,7 +130,7 @@ Remember: You MUST provide values for ALL fields including support, resistance, 
     modelId: "meta-llama/llama-4-scout-17b-16e-instruct",
   };
   
-  const client = getAIClient(aiConfig);
+  const client = await getAIClient(aiConfig);
   const model = aiConfig.modelId || getDefaultModel(aiConfig.provider);
 
   try {

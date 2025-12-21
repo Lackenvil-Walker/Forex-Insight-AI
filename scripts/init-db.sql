@@ -121,6 +121,14 @@ CREATE TABLE IF NOT EXISTS service_logs (
     created_at TIMESTAMP DEFAULT NOW()
 );
 
+-- API Keys (encrypted storage for self-hosted deployments)
+CREATE TABLE IF NOT EXISTS api_keys (
+    id VARCHAR PRIMARY KEY DEFAULT gen_random_uuid()::text,
+    key_name VARCHAR UNIQUE NOT NULL,
+    encrypted_value TEXT NOT NULL,
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+
 -- Insert default system configuration
 INSERT INTO system_config (id, provider, model_id, system_prompt, free_limit)
 VALUES (

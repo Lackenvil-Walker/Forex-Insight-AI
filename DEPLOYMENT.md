@@ -6,7 +6,7 @@ This guide explains how to deploy Forex Edge to your own server using Docker.
 
 - Docker and Docker Compose installed on your server
 - Git access to clone the repository
-- API keys for at least one AI provider (Groq recommended)
+- API keys for at least one AI provider (Groq recommended) - can be added via Admin panel after deployment
 
 ## Quick Start
 
@@ -29,19 +29,21 @@ Edit `.env` with your values:
 # Required - Generate with: openssl rand -hex 32
 SESSION_SECRET=your_generated_secret_here
 
-# Required - At least one AI provider key
-GROQ_API_KEY=gsk_your_groq_key
-
-# Optional but recommended
-RESEND_API_KEY=re_your_resend_key
-PAYSTACK_SECRET_KEY=sk_live_your_paystack_key
+# Database password (change this!)
+POSTGRES_PASSWORD=your_secure_db_password
 
 # Admin email(s)
 ADMIN_EMAILS=admin@yourdomain.com
 
-# Database password (change this!)
-POSTGRES_PASSWORD=your_secure_db_password
+# API keys - OPTIONAL here, can be added via Admin panel instead
+# GROQ_API_KEY=gsk_your_groq_key
+# RESEND_API_KEY=re_your_resend_key
+# PAYSTACK_SECRET_KEY=sk_live_your_paystack_key
 ```
+
+**Note:** API keys can be added either:
+1. In the `.env` file (before deployment)
+2. Via Admin > Settings > Configure API Keys (after deployment)
 
 ### 3. Build and Start
 
@@ -85,13 +87,22 @@ docker-compose exec db psql -U postgres -d forexai -f /tmp/backup.sql
 
 ### AI Providers
 
-The app supports multiple AI providers. Set the API key for the provider you want to use:
+The app supports multiple AI providers. You can configure API keys in two ways:
+
+**Option 1: Environment Variables**
+Set in your `.env` file before deployment:
 
 | Provider | Environment Variable | Recommended |
 |----------|---------------------|-------------|
 | Groq | `GROQ_API_KEY` | Yes (fast, reliable) |
 | OpenAI | `CUSTOM_OPENAI_API_KEY` | Yes (high quality) |
 | Gemini | `GEMINI_API_KEY` | Yes (good alternative) |
+
+**Option 2: Admin Panel (Recommended for Docker)**
+1. Start the app without API keys
+2. Log in as admin
+3. Go to Admin > Settings > Configure API Keys
+4. Enter your API keys - they are encrypted and stored securely
 
 You can switch providers in the Admin Settings without restarting.
 

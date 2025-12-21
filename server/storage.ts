@@ -18,6 +18,8 @@ import {
   type InsertServiceLog,
   type AiProvider,
   type InsertAiProvider,
+  type ApiKey,
+  type InsertApiKey,
   users,
   analyses,
   systemConfig,
@@ -27,6 +29,7 @@ import {
   mobilePayments,
   serviceLogs,
   aiProviders,
+  apiKeys,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc } from "drizzle-orm";
@@ -79,6 +82,12 @@ export interface IStorage {
   createAiProvider(provider: InsertAiProvider): Promise<AiProvider>;
   updateAiProvider(id: string, updates: Partial<InsertAiProvider>): Promise<AiProvider | undefined>;
   deleteAiProvider(id: string): Promise<boolean>;
+
+  // API Keys
+  getApiKey(keyName: string): Promise<string | null>;
+  setApiKey(keyName: string, value: string): Promise<void>;
+  deleteApiKey(keyName: string): Promise<boolean>;
+  getAllApiKeyNames(): Promise<string[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -328,6 +337,41 @@ export class DatabaseStorage implements IStorage {
   async deleteAiProvider(id: string): Promise<boolean> {
     const result = await db.delete(aiProviders).where(eq(aiProviders.id, id));
     return true;
+  }
+
+  async getApiKey(keyName: string): Promise<string | null> {
+    try {
+      const [key] = await db.select().from(apiKeys).where(eq(apiKeys.keyName, keyName));
+      if (!key) return null;
+      
+      const { decrypt } = await import('./encryption');
+      return decrypt(key.encryptedValue);
+    } catch (error) {
+      console.error('Failed to get API key:', keyName, error);
+      return null;
+    }
+  }
+
+  async setApiKey(keyName: string, value: string): Promise<void> {
+    const { encrypt } = await import('./encryption');
+    const encryptedValue = encrypt(value);
+    
+    await db.insert(apiKeys)
+      .values({ keyName, encryptedValue })
+      .onConflictDoUpdate({
+        target: apiKeys.keyName,
+        set: { encryptedValue, updatedAt: new Date() }
+      });
+  }
+
+  async deleteApiKey(keyName: string): Promise<boolean> {
+    await db.delete(apiKeys).where(eq(apiKeys.keyName, keyName));
+    return true;
+  }
+
+  async getAllApiKeyNames(): Promise<string[]> {
+    const keys = await db.select({ keyName: apiKeys.keyName }).from(apiKeys);
+    return keys.map(k => k.keyName);
   }
 }
 

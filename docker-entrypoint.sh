@@ -16,17 +16,19 @@ if [ -z "$SESSION_SECRET" ]; then
   MISSING_VARS="$MISSING_VARS SESSION_SECRET"
 fi
 
+# API keys are now optional at startup - can be configured via Admin panel
 if [ -z "$GROQ_API_KEY" ] && [ -z "$CUSTOM_OPENAI_API_KEY" ] && [ -z "$GEMINI_API_KEY" ]; then
-  MISSING_VARS="$MISSING_VARS GROQ_API_KEY_or_CUSTOM_OPENAI_API_KEY_or_GEMINI_API_KEY"
+  echo "INFO: No AI API keys set in environment"
+  echo "      You can configure API keys in Admin > Settings after login"
 fi
 
 # Optional but recommended
 if [ -z "$RESEND_API_KEY" ]; then
-  echo "WARNING: RESEND_API_KEY not set - email features will not work"
+  echo "INFO: RESEND_API_KEY not set - configure in Admin panel for email features"
 fi
 
 if [ -z "$PAYSTACK_SECRET_KEY" ]; then
-  echo "WARNING: PAYSTACK_SECRET_KEY not set - payment features will not work"
+  echo "INFO: PAYSTACK_SECRET_KEY not set - configure in Admin panel for payments"
 fi
 
 # Check for missing required variables
@@ -42,7 +44,8 @@ if [ -n "$MISSING_VARS" ]; then
   exit 1
 fi
 
-echo "All required environment variables are set."
+echo ""
+echo "Required environment variables are set."
 echo "Starting Forex Edge..."
 echo "=========================================="
 

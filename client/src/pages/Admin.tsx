@@ -1077,6 +1077,107 @@ function AdminPayments() {
   );
 }
 
+function ApiKeysManager({ onSuccess }: { onSuccess: () => void }) {
+  const [keyValues, setKeyValues] = useState<Record<string, string>>({
+    GROQ_API_KEY: '',
+    GEMINI_API_KEY: '',
+    CUSTOM_OPENAI_API_KEY: '',
+    RESEND_API_KEY: '',
+    PAYSTACK_SECRET_KEY: '',
+  });
+  const [savingKey, setSavingKey] = useState<string | null>(null);
+
+  const saveKeyMutation = useMutation({
+    mutationFn: async ({ keyName, value }: { keyName: string; value: string }) => {
+      const response = await fetch('/api/admin/api-keys', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ keyName, value }),
+        credentials: 'include'
+      });
+      if (!response.ok) throw new Error('Failed to save API key');
+      return response.json();
+    },
+    onSuccess: (_, variables) => {
+      setKeyValues(prev => ({ ...prev, [variables.keyName]: '' }));
+      onSuccess();
+      toast.success("API Key Saved", { description: `${variables.keyName} has been saved securely.` });
+    },
+    onError: (error: Error) => {
+      toast.error("Save Failed", { description: error.message });
+    },
+    onSettled: () => setSavingKey(null)
+  });
+
+  const handleSaveKey = (keyName: string) => {
+    const value = keyValues[keyName];
+    if (!value.trim()) {
+      toast.error("Error", { description: "Please enter a value for the API key." });
+      return;
+    }
+    setSavingKey(keyName);
+    saveKeyMutation.mutate({ keyName, value: value.trim() });
+  };
+
+  const apiKeyFields = [
+    { name: 'GROQ_API_KEY', label: 'Groq API Key', placeholder: 'gsk_...', description: 'For AI chart analysis (recommended)' },
+    { name: 'GEMINI_API_KEY', label: 'Gemini API Key', placeholder: 'AI...', description: 'Alternative AI provider' },
+    { name: 'CUSTOM_OPENAI_API_KEY', label: 'OpenAI API Key', placeholder: 'sk-...', description: 'Alternative AI provider' },
+    { name: 'RESEND_API_KEY', label: 'Resend API Key', placeholder: 're_...', description: 'For email verification' },
+    { name: 'PAYSTACK_SECRET_KEY', label: 'Paystack Secret Key', placeholder: 'sk_live_...', description: 'For payment processing' },
+  ];
+
+  return (
+    <Card className="border-amber-500/20">
+      <CardHeader>
+        <div className="flex items-center gap-2">
+          <Key className="w-5 h-5 text-amber-500" />
+          <CardTitle>Configure API Keys</CardTitle>
+        </div>
+        <CardDescription>
+          Add or update your API keys here. Keys are encrypted and stored securely in the database.
+          This is useful for Docker deployments where environment variables may not be set.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {apiKeyFields.map((field) => (
+          <div key={field.name} className="flex items-end gap-3 p-4 bg-muted/30 rounded-lg border border-border">
+            <div className="flex-1 space-y-2">
+              <Label htmlFor={field.name}>{field.label}</Label>
+              <p className="text-xs text-muted-foreground">{field.description}</p>
+              <Input
+                id={field.name}
+                type="password"
+                placeholder={field.placeholder}
+                value={keyValues[field.name]}
+                onChange={(e) => setKeyValues(prev => ({ ...prev, [field.name]: e.target.value }))}
+                data-testid={`input-${field.name}`}
+              />
+            </div>
+            <Button 
+              onClick={() => handleSaveKey(field.name)} 
+              disabled={savingKey === field.name || !keyValues[field.name].trim()}
+              className="shrink-0"
+              data-testid={`button-save-${field.name}`}
+            >
+              {savingKey === field.name ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Save className="w-4 h-4" />
+              )}
+            </Button>
+          </div>
+        ))}
+        <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-md">
+          <p className="text-sm text-amber-600 dark:text-amber-400">
+            <strong>Note:</strong> If an API key is set in both environment variables and here, the environment variable takes priority.
+          </p>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 function AdminSettings() {
   const [provider, setProvider] = useState("groq");
   const [modelId, setModelId] = useState("meta-llama/llama-4-scout-17b-16e-instruct");
@@ -1504,9 +1605,43 @@ function AdminSettings() {
                   <XCircle className="w-5 h-5 text-red-500" />
                 )}
               </div>
+              <div className="flex items-center justify-between p-4 bg-muted/30 rounded-lg border border-border" data-testid="status-resend-key">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-blue-500/10 rounded-lg">
+                    <Key className="w-4 h-4 text-blue-500" />
+                  </div>
+                  <div>
+                    <p className="font-medium text-sm">Resend (Email)</p>
+                    <p className="text-xs text-muted-foreground">RESEND_API_KEY</p>
+                  </div>
+                </div>
+                {apiKeysStatus?.resend ? (
+                  <CheckCircle2 className="w-5 h-5 text-green-500" />
+                ) : (
+                  <XCircle className="w-5 h-5 text-red-500" />
+                )}
+              </div>
+              <div className="flex items-center justify-between p-4 bg-muted/30 rounded-lg border border-border" data-testid="status-paystack-key">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-green-500/10 rounded-lg">
+                    <Key className="w-4 h-4 text-green-500" />
+                  </div>
+                  <div>
+                    <p className="font-medium text-sm">Paystack (Payments)</p>
+                    <p className="text-xs text-muted-foreground">PAYSTACK_SECRET_KEY</p>
+                  </div>
+                </div>
+                {apiKeysStatus?.paystack ? (
+                  <CheckCircle2 className="w-5 h-5 text-green-500" />
+                ) : (
+                  <XCircle className="w-5 h-5 text-red-500" />
+                )}
+              </div>
             </div>
           </CardContent>
         </Card>
+
+        <ApiKeysManager onSuccess={() => queryClient.invalidateQueries({ queryKey: ['admin-api-keys-status'] })} />
 
         <Card>
           <CardHeader>

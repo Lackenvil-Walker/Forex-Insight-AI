@@ -548,21 +548,55 @@ export async function registerRoutes(
   // API Keys status endpoint (admin only) - shows which keys are configured without exposing values
   app.get('/api/admin/api-keys-status', requireAdmin, async (req, res) => {
     try {
-      const providers = await storage.getAiProviders();
+      const dbKeys = await storage.getAllApiKeyNames();
       const status: Record<string, boolean> = {};
-      for (const provider of providers) {
-        status[provider.name.toLowerCase()] = !!process.env[provider.apiKeyEnvVar];
-      }
-      // Fallback to hardcoded if no providers exist
-      if (Object.keys(status).length === 0) {
-        status.groq = !!process.env.GROQ_API_KEY;
-        status.gemini = !!process.env.GEMINI_API_KEY;
-        status.openai = !!process.env.CUSTOM_OPENAI_API_KEY;
-      }
+      
+      // Check for AI provider keys (env var OR database)
+      status.groq = !!process.env.GROQ_API_KEY || dbKeys.includes('GROQ_API_KEY');
+      status.gemini = !!process.env.GEMINI_API_KEY || dbKeys.includes('GEMINI_API_KEY');
+      status.openai = !!process.env.CUSTOM_OPENAI_API_KEY || dbKeys.includes('CUSTOM_OPENAI_API_KEY');
+      
+      // Check for other service keys
+      status.resend = !!process.env.RESEND_API_KEY || dbKeys.includes('RESEND_API_KEY');
+      status.paystack = !!process.env.PAYSTACK_SECRET_KEY || dbKeys.includes('PAYSTACK_SECRET_KEY');
+      
       res.json(status);
     } catch (error) {
       console.error("Error fetching API keys status:", error);
       res.status(500).json({ error: 'Failed to fetch API keys status' });
+    }
+  });
+
+  // API Keys management endpoints (admin only)
+  app.post('/api/admin/api-keys', requireAdmin, async (req, res) => {
+    try {
+      const { keyName, value } = req.body;
+      
+      if (!keyName || !value) {
+        return res.status(400).json({ error: 'Key name and value are required' });
+      }
+      
+      const allowedKeys = ['GROQ_API_KEY', 'GEMINI_API_KEY', 'CUSTOM_OPENAI_API_KEY', 'RESEND_API_KEY', 'PAYSTACK_SECRET_KEY'];
+      if (!allowedKeys.includes(keyName)) {
+        return res.status(400).json({ error: 'Invalid key name' });
+      }
+      
+      await storage.setApiKey(keyName, value);
+      res.json({ success: true, message: `${keyName} saved successfully` });
+    } catch (error) {
+      console.error("Error saving API key:", error);
+      res.status(500).json({ error: 'Failed to save API key' });
+    }
+  });
+
+  app.delete('/api/admin/api-keys/:keyName', requireAdmin, async (req, res) => {
+    try {
+      const { keyName } = req.params;
+      await storage.deleteApiKey(keyName);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting API key:", error);
+      res.status(500).json({ error: 'Failed to delete API key' });
     }
   });
 
