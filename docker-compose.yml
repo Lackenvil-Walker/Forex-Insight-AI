@@ -8,28 +8,47 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=5000
-      - DATABASE_URL=${DATABASE_URL}
+      - DATABASE_URL=postgresql://postgres:${POSTGRES_PASSWORD:-forexai_password}@db:5432/forexai
       - SESSION_SECRET=${SESSION_SECRET}
-      - GROQ_API_KEY=${GROQ_API_KEY}
+      - GROQ_API_KEY=${GROQ_API_KEY:-}
       - CUSTOM_OPENAI_API_KEY=${CUSTOM_OPENAI_API_KEY:-}
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
       - RESEND_API_KEY=${RESEND_API_KEY:-}
       - PAYSTACK_SECRET_KEY=${PAYSTACK_SECRET_KEY:-}
       - ADMIN_EMAILS=${ADMIN_EMAILS:-}
+      - PGHOST=db
+      - PGPORT=5432
+      - PGUSER=postgres
+      - PGPASSWORD=${POSTGRES_PASSWORD:-forexai_password}
+      - PGDATABASE=forexai
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:5000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
 
   db:
     image: postgres:15-alpine
     environment:
-      - POSTGRES_USER=forexai
+      - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-forexai_password}
       - POSTGRES_DB=forexai
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init.sql:ro
     ports:
       - "5432:5432"
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d forexai"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
 volumes:
   postgres_data:
