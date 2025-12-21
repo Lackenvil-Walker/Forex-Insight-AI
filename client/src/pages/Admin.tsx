@@ -1925,7 +1925,7 @@ function AdminLogs() {
     },
   });
 
-  const { data: logs, isLoading, refetch } = useQuery<ServiceLog[]>({
+  const { data: logs, isLoading, isFetching, refetch } = useQuery<ServiceLog[]>({
     queryKey: ['admin-logs', serviceFilter, levelFilter, userFilter],
     queryFn: async () => {
       const params = new URLSearchParams();
@@ -2017,7 +2017,8 @@ function AdminLogs() {
                   ))}
                 </SelectContent>
               </Select>
-              <Button variant="outline" size="sm" onClick={() => refetch()} data-testid="button-refresh-logs">
+              <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching} data-testid="button-refresh-logs">
+                {isFetching ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : null}
                 Refresh
               </Button>
             </div>
