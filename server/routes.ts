@@ -102,7 +102,7 @@ export async function registerRoutes(
       // Send verification email
       await sendVerificationEmail(email, verificationToken);
 
-      await logInfo('auth', `New user signup: ${email}`, { userId: user.id });
+      await logInfo('auth', `New user signup: ${email}`, {}, user.id);
       res.json({ 
         message: 'Account created. Please check your email to verify your account.',
         requiresVerification: true 
@@ -149,7 +149,7 @@ export async function registerRoutes(
         
         req.session.userId = user.id;
         
-        await logInfo('auth', `User logged in: ${email}`, { userId: user.id });
+        await logInfo('auth', `User logged in: ${email}`, {}, user.id);
         res.json({ 
           id: user.id,
           email: user.email,
@@ -177,7 +177,7 @@ export async function registerRoutes(
         return res.status(500).json({ error: 'Failed to log out' });
       }
       if (userId) {
-        await logInfo('auth', `User logged out: ${userEmail || userId}`, { userId });
+        await logInfo('auth', `User logged out: ${userEmail || userId}`, {}, userId);
       }
       res.json({ message: 'Logged out successfully' });
     });
