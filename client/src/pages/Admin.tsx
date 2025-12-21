@@ -1900,20 +1900,39 @@ interface ServiceLog {
   message: string;
   details: any;
   userId: string | null;
+  userEmail: string | null;
+  userName: string | null;
   createdAt: string;
+}
+
+interface UserOption {
+  id: string;
+  email: string;
+  firstName: string | null;
 }
 
 function AdminLogs() {
   const [serviceFilter, setServiceFilter] = useState<string>('all');
   const [levelFilter, setLevelFilter] = useState<string>('all');
+  const [userFilter, setUserFilter] = useState<string>('all');
+
+  const { data: users } = useQuery<UserOption[]>({
+    queryKey: ['admin-users-list'],
+    queryFn: async () => {
+      const response = await fetch('/api/admin/users', { credentials: 'include' });
+      if (!response.ok) throw new Error('Failed to fetch users');
+      return response.json();
+    },
+  });
 
   const { data: logs, isLoading, refetch } = useQuery<ServiceLog[]>({
-    queryKey: ['admin-logs', serviceFilter, levelFilter],
+    queryKey: ['admin-logs', serviceFilter, levelFilter, userFilter],
     queryFn: async () => {
       const params = new URLSearchParams();
       params.set('limit', '200');
       if (serviceFilter !== 'all') params.set('service', serviceFilter);
       if (levelFilter !== 'all') params.set('level', levelFilter);
+      if (userFilter !== 'all') params.set('userId', userFilter);
       
       const response = await fetch(`/api/admin/logs?${params}`, { credentials: 'include' });
       if (!response.ok) throw new Error('Failed to fetch logs');
@@ -1985,6 +2004,19 @@ function AdminLogs() {
                   <SelectItem value="debug">Debug</SelectItem>
                 </SelectContent>
               </Select>
+              <Select value={userFilter} onValueChange={setUserFilter}>
+                <SelectTrigger className="w-[180px]" data-testid="select-user-filter">
+                  <SelectValue placeholder="User" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Users</SelectItem>
+                  {users?.map((user) => (
+                    <SelectItem key={user.id} value={user.id}>
+                      {user.firstName || user.email.split('@')[0]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               <Button variant="outline" size="sm" onClick={() => refetch()} data-testid="button-refresh-logs">
                 Refresh
               </Button>
@@ -2021,8 +2053,9 @@ function AdminLogs() {
                       </span>
                     </div>
                     {log.userId && (
-                      <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">
-                        User: {log.userId.slice(0, 8)}...
+                      <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded flex items-center gap-1">
+                        <Users className="w-3 h-3" />
+                        {log.userEmail || log.userName || log.userId.slice(0, 8) + '...'}
                       </span>
                     )}
                   </div>

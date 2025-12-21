@@ -297,11 +297,12 @@ export class DatabaseStorage implements IStorage {
     return entry;
   }
 
-  async getLogs(limit: number = 100, service?: string, level?: string): Promise<ServiceLog[]> {
+  async getLogs(limit: number = 100, service?: string, level?: string, userId?: string): Promise<ServiceLog[]> {
     let query = db.select().from(serviceLogs);
     const conditions = [];
     if (service) conditions.push(eq(serviceLogs.service, service));
     if (level) conditions.push(eq(serviceLogs.level, level));
+    if (userId) conditions.push(eq(serviceLogs.userId, userId));
     if (conditions.length > 0) {
       query = query.where(and(...conditions)) as any;
     }

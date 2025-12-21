@@ -1024,8 +1024,29 @@ export async function registerRoutes(
       const limit = parseInt(req.query.limit as string) || 100;
       const service = req.query.service as string || undefined;
       const level = req.query.level as string || undefined;
-      const logs = await storage.getLogs(limit, service, level);
-      res.json(logs);
+      const userId = req.query.userId as string || undefined;
+      const logs = await storage.getLogs(limit, service, level, userId);
+      
+      // Enrich logs with user email for display
+      const userIds = Array.from(new Set(logs.filter(l => l.userId).map(l => l.userId as string)));
+      const usersMap: Record<string, { email: string; firstName: string | null }> = {};
+      
+      for (const uid of userIds) {
+        if (uid) {
+          const user = await storage.getUser(uid);
+          if (user) {
+            usersMap[uid] = { email: user.email, firstName: user.firstName };
+          }
+        }
+      }
+      
+      const enrichedLogs = logs.map(log => ({
+        ...log,
+        userEmail: log.userId ? usersMap[log.userId]?.email : null,
+        userName: log.userId ? usersMap[log.userId]?.firstName : null,
+      }));
+      
+      res.json(enrichedLogs);
     } catch (error: any) {
       console.error("Error fetching logs:", error);
       res.status(500).json({ error: 'Failed to fetch logs' });
