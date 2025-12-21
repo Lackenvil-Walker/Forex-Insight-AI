@@ -1984,9 +1984,9 @@ function AdminLogs() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Services</SelectItem>
-                  <SelectItem value="ai">AI</SelectItem>
-                  <SelectItem value="auth">Auth</SelectItem>
-                  <SelectItem value="payment">Payment</SelectItem>
+                  <SelectItem value="ai">AI Analysis</SelectItem>
+                  <SelectItem value="auth">Authentication</SelectItem>
+                  <SelectItem value="payment">Payments</SelectItem>
                   <SelectItem value="paystack">Paystack</SelectItem>
                   <SelectItem value="mobile_payment">Mobile Payment</SelectItem>
                   <SelectItem value="system">System</SelectItem>

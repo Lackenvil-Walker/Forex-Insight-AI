@@ -167,11 +167,17 @@ export async function registerRoutes(
     }
   });
 
-  app.post('/api/auth/logout', (req: any, res) => {
-    req.session.destroy((err: any) => {
+  app.post('/api/auth/logout', async (req: any, res) => {
+    const userId = req.session?.userId;
+    const userEmail = userId ? (await storage.getUser(userId))?.email : null;
+    
+    req.session.destroy(async (err: any) => {
       if (err) {
         console.error('Logout error:', err);
         return res.status(500).json({ error: 'Failed to log out' });
+      }
+      if (userId) {
+        await logInfo('auth', `User logged out: ${userEmail || userId}`, { userId });
       }
       res.json({ message: 'Logged out successfully' });
     });
@@ -408,6 +414,9 @@ export async function registerRoutes(
       }
 
       const updatedUser = await storage.updateUser(userId, updates);
+      
+      const changedFields = Object.keys(updates).filter(k => k !== 'passwordHash');
+      await logInfo('auth', `User updated profile: ${changedFields.join(', ') || 'password changed'}`, { changedFields }, userId);
 
       res.json({
         id: updatedUser!.id,
@@ -836,6 +845,8 @@ export async function registerRoutes(
         return res.status(500).json({ error: data.message || 'Payment initialization failed' });
       }
 
+      await logInfo('payment', `Payment initialized for ${creditPackage.credits} credits (R${(creditPackage.priceZar / 100).toFixed(2)})`, { packageId, reference, credits: creditPackage.credits }, userId);
+      
       res.json({
         authorization_url: data.data.authorization_url,
         access_code: data.data.access_code,
@@ -888,6 +899,8 @@ export async function registerRoutes(
       await storage.updateTransactionStatus(transaction.id, 'success');
       await storage.addCredits(userId, transaction.credits);
 
+      await logInfo('payment', `Payment successful: ${transaction.credits} credits added`, { reference, credits: transaction.credits }, userId);
+
       res.json({ 
         status: 'success', 
         message: 'Payment verified successfully', 
@@ -895,6 +908,7 @@ export async function registerRoutes(
       });
     } catch (error: any) {
       console.error("Error verifying payment:", error);
+      await logError('payment', `Payment verification failed: ${error.message}`, { error: error.message }, req.session?.userId);
       res.status(500).json({ error: 'Failed to verify payment' });
     }
   });
@@ -920,6 +934,7 @@ export async function registerRoutes(
         if (transaction && transaction.status === 'pending') {
           await storage.updateTransactionStatus(transaction.id, 'success');
           await storage.addCredits(transaction.userId, transaction.credits);
+          await logInfo('payment', `Webhook: Payment successful - ${transaction.credits} credits added`, { reference, credits: transaction.credits }, transaction.userId);
           console.log(`Webhook: Added ${transaction.credits} credits to user ${transaction.userId}`);
         }
       }
