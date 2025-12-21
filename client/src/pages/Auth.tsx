@@ -29,7 +29,7 @@ export default function Auth() {
      setIsLoading(true);
      setTimeout(() => {
        setIsLoading(false);
-       login('admin@forexai.com', 'admin');
+       login('admin@forexedge.co.za', 'admin');
      }, 1000);
   }
 

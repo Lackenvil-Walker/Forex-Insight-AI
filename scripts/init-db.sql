@@ -1,4 +1,4 @@
--- ForexAI Database Initialization Script
+-- Forex Edge Database Initialization Script
 -- This script runs automatically when the PostgreSQL container starts for the first time
 
 -- Create extension for UUID generation

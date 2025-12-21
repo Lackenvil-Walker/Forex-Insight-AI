@@ -1,0 +1,168 @@
+
+      
+  - GROQ_API_KEY_or_CUSTOM_OPENAI_API_KEY_or_GEMINI_API_KEY
+
+Please set these variables and restart the container.
+
+See .env.example for reference.
+
+==========================================
+
+ForexAI - Environment Validation
+
+==========================================
+
+WARNING: RESEND_API_KEY not set - email features will not work
+
+WARNING: PAYSTACK_SECRET_KEY not set - payment features will not work
+
+ERROR: Missing required environment variables:
+
+  - SESSION_SECRET
+
+  - GROQ_API_KEY_or_CUSTOM_OPENAI_API_KEY_or_GEMINI_API_KEY
+
+Please set these variables and restart the container.
+
+See .env.example for reference.
+
+==========================================
+
+ForexAI - Environment Validation
+
+==========================================
+
+WARNING: RESEND_API_KEY not set - email features will not work
+
+WARNING: PAYSTACK_SECRET_KEY not set - payment features will not work
+
+ERROR: Missing required environment variables:
+
+  - SESSION_SECRET
+
+  - GROQ_API_KEY_or_CUSTOM_OPENAI_API_KEY_or_GEMINI_API_KEY
+
+Please set these variables and restart the container.
+
+See .env.example for reference.
+
+==========================================
+
+ForexAI - Environment Validation
+
+==========================================
+
+WARNING: RESEND_API_KEY not set - email features will not work
+
+WARNING: PAYSTACK_SECRET_KEY not set - payment features will not work
+
+ERROR: Missing required environment variables:
+
+  - SESSION_SECRET
+
+  - GROQ_API_KEY_or_CUSTOM_OPENAI_API_KEY_or_GEMINI_API_KEY
+
+Please set these variables and restart the container.
+
+See .env.example for reference.
+
+==========================================
+
+ForexAI - Environment Validation
+
+==========================================
+
+WARNING: RESEND_API_KEY not set - email features will not work
+
+WARNING: PAYSTACK_SECRET_KEY not set - payment features will not work
+
+ERROR: Missing required environment variables:
+
+  - SESSION_SECRET
+
+  - GROQ_API_KEY_or_CUSTOM_OPENAI_API_KEY_or_GEMINI_API_KEY
+
+Please set these variables and restart the container.
+
+See .env.example for reference.
+
+==========================================
+
+ForexAI - Environment Validation
+
+==========================================
+
+WARNING: RESEND_API_KEY not set - email features will not work
+
+WARNING: PAYSTACK_SECRET_KEY not set - payment features will not work
+
+ERROR: Missing required environment variables:
+
+  - SESSION_SECRET
+
+  - GROQ_API_KEY_or_CUSTOM_OPENAI_API_KEY_or_GEMINI_API_KEY
+
+Please set these variables and restart the container.
+
+See .env.example for reference.
+
+==========================================
+
+ForexAI - Environment Validation
+
+==========================================
+
+WARNING: RESEND_API_KEY not set - email features will not work
+
+WARNING: PAYSTACK_SECRET_KEY not set - payment features will not work
+
+ERROR: Missing required environment variables:
+
+  - SESSION_SECRET
+
+  - GROQ_API_KEY_or_CUSTOM_OPENAI_API_KEY_or_GEMINI_API_KEY
+
+Please set these variables and restart the container.
+
+See .env.example for reference.
+
+==========================================
+
+ForexAI - Environment Validation
+
+==========================================
+
+WARNING: RESEND_API_KEY not set - email features will not work
+
+WARNING: PAYSTACK_SECRET_KEY not set - payment features will not work
+
+ERROR: Missing required environment variables:
+
+  - SESSION_SECRET
+
+  - GROQ_API_KEY_or_CUSTOM_OPENAI_API_KEY_or_GEMINI_API_KEY
+
+Please set these variables and restart the container.
+
+See .env.example for reference.
+
+==========================================
+
+ForexAI - Environment Validation
+
+==========================================
+
+WARNING: RESEND_API_KEY not set - email features will not work
+
+WARNING: PAYSTACK_SECRET_KEY not set - payment features will not work
+
+ERROR: Missing required environment variables:
+
+  - SESSION_SECRET
+
+  - GROQ_API_KEY_or_CUSTOM_OPENAI_API_KEY_or_GEMINI_API_KEY
+
+Please set these variables and restart the container.
+
+See .env.example for reference.
+

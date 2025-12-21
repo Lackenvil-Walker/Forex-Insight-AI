@@ -1,4 +1,4 @@
-# ForexAI Dockerfile
+# Forex Edge Dockerfile
 # Multi-stage build for production deployment
 
 # ==========================================

@@ -8,6 +8,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
+import forexEdgeLogo from '@/assets/forex-edge-logo-icon.png';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -40,9 +41,12 @@ export function Layout({ children, isAdminLayout = false }: LayoutProps) {
       <aside className="w-64 border-r border-border bg-sidebar hidden md:flex flex-col">
         <div className="p-6">
           <Link href="/">
-            <h1 className="text-2xl font-bold tracking-tighter cursor-pointer flex items-center gap-2">
-              <span className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-black font-mono text-lg">F</span>
-              FOREX<span className="text-primary">AI</span>
+            <h1 className="text-xl font-bold tracking-tighter cursor-pointer flex items-center gap-3">
+              <img src={forexEdgeLogo} alt="Forex Edge" className="w-10 h-10 object-contain" />
+              <div className="flex flex-col">
+                <span className="text-primary leading-tight">FOREX EDGE</span>
+                <span className="text-xs text-muted-foreground font-normal tracking-wider">TRADE SMART</span>
+              </div>
             </h1>
           </Link>
         </div>
@@ -117,8 +121,9 @@ export function Layout({ children, isAdminLayout = false }: LayoutProps) {
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Mobile Header (visible only on small screens) */}
         <header className="md:hidden h-16 border-b border-border flex items-center justify-between px-4 bg-sidebar">
-           <Link href="/">
-            <span className="font-bold">FOREX<span className="text-primary">AI</span></span>
+           <Link href="/" className="flex items-center gap-2">
+            <img src={forexEdgeLogo} alt="Forex Edge" className="w-8 h-8 object-contain" />
+            <span className="font-bold text-primary">FOREX EDGE</span>
            </Link>
            <Button variant="ghost" size="icon">
              <Settings className="w-5 h-5" />

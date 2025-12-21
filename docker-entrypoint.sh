@@ -2,7 +2,7 @@
 set -e
 
 echo "=========================================="
-echo "ForexAI - Environment Validation"
+echo "Forex Edge - Environment Validation"
 echo "=========================================="
 
 MISSING_VARS=""
@@ -43,7 +43,7 @@ if [ -n "$MISSING_VARS" ]; then
 fi
 
 echo "All required environment variables are set."
-echo "Starting ForexAI..."
+echo "Starting Forex Edge..."
 echo "=========================================="
 
 # Execute the main command

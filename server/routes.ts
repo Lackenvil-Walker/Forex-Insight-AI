@@ -54,7 +54,7 @@ export async function registerRoutes(
     if (!user) {
       user = await storage.upsertUser({
         id: GUEST_USER_ID,
-        email: 'guest@forexai.app',
+        email: 'guest@forexedge.app',
         passwordHash: '',
         firstName: 'Guest',
         lastName: 'User',

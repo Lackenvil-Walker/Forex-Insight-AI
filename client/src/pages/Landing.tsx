@@ -5,6 +5,7 @@ import { Check, ArrowRight, Brain, BarChart3, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import generatedImage from '@assets/generated_images/dark_abstract_digital_financial_data_visualization_background.png';
+import forexEdgeLogo from '@/assets/forex-edge-logo-icon.png';
 
 export default function Landing() {
   return (
@@ -12,9 +13,12 @@ export default function Landing() {
       {/* Navigation */}
       <nav className="border-b border-white/10 backdrop-blur-md fixed top-0 w-full z-50 bg-background/50">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-             <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-black font-mono font-bold">F</div>
-             <span className="text-xl font-bold tracking-tight">FOREX<span className="text-primary">AI</span></span>
+          <div className="flex items-center gap-3">
+             <img src={forexEdgeLogo} alt="Forex Edge" className="w-10 h-10 object-contain" />
+             <div className="flex flex-col">
+               <span className="text-lg font-bold tracking-tight text-primary leading-tight">FOREX EDGE</span>
+               <span className="text-xs text-muted-foreground tracking-wider">TRADE SMART</span>
+             </div>
           </div>
           <div className="flex items-center gap-4">
             <Link href="/pricing">
@@ -181,7 +185,7 @@ export default function Landing() {
       {/* Footer */}
       <footer className="py-12 border-t border-white/10 text-center text-muted-foreground text-sm">
         <div className="container mx-auto px-4">
-          <p className="mb-4">&copy; 2025 ForexAI Inc. All rights reserved.</p>
+          <p className="mb-4">&copy; 2025 Forex Edge. All rights reserved.</p>
           <p className="max-w-xl mx-auto text-xs opacity-60">
             Disclaimer: Trading forex and CFDs carries a high level of risk and may not be suitable for all investors. The AI analysis provided is for informational purposes only and does not constitute financial advice.
           </p>

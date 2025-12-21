@@ -1,6 +1,6 @@
-# ForexAI Docker Deployment Guide
+# Forex Edge Docker Deployment Guide
 
-This guide explains how to deploy ForexAI to your own server using Docker.
+This guide explains how to deploy Forex Edge to your own server using Docker.
 
 ## Prerequisites
 

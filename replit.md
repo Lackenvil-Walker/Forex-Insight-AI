@@ -1,11 +1,13 @@
-# ForexAI - AI-Powered Trading Intelligence Platform
+# Forex Edge - Trade Smart
 
 ## Overview
 
-ForexAI is a full-stack web application that provides AI-powered forex chart analysis. Users can upload trading charts and receive institutional-grade analysis including trend detection, entry/exit points, stop-loss levels, and trading recommendations. The platform uses a credit-based model where admins manually manage user credits.
+Forex Edge is a full-stack web application that provides AI-powered forex chart analysis. Users can upload trading charts and receive institutional-grade analysis including trend detection, entry/exit points, stop-loss levels, and trading recommendations. The platform uses a credit-based model where admins manually manage user credits.
 
 ## Recent Changes
 
+- **December 21, 2025**: Rebranded from ForexAI to Forex Edge with new logo and tagline "Trade Smart".
+- **December 21, 2025**: Added Docker deployment configuration for self-hosted deployment.
 - **December 15, 2025**: Added Gemini as an AI provider option. Admins can now switch between Groq, Gemini, and OpenAI in Settings.
 - **December 12, 2025**: Removed Stripe integration (not available in South Africa). Added Paystack payment gateway for credit purchases in ZAR. Users can now buy credit packages directly through the Pricing page.
 

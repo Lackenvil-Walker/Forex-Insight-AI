@@ -3,7 +3,8 @@ import { useLocation, Link } from 'wouter';
 import { useAuth } from '@/lib/auth';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, TrendingUp, CheckCircle, XCircle } from 'lucide-react';
+import { Loader2, CheckCircle, XCircle } from 'lucide-react';
+import forexEdgeLogo from '@/assets/forex-edge-logo-full.png';
 
 export default function VerifyEmail() {
   const [, navigate] = useLocation();
@@ -37,9 +38,8 @@ export default function VerifyEmail() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 px-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <Link href="/" className="inline-flex items-center gap-2 text-2xl font-bold text-white">
-            <TrendingUp className="w-8 h-8 text-blue-500" />
-            ForexAI
+          <Link href="/" className="inline-block">
+            <img src={forexEdgeLogo} alt="Forex Edge - Trade Smart" className="h-20 mx-auto object-contain" />
           </Link>
         </div>
 

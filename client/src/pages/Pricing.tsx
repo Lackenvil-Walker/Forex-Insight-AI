@@ -412,7 +412,7 @@ export default function Pricing() {
           <p>Secure payments powered by Paystack & Airtel Money</p>
           <p className="mt-2">
             Questions?{" "}
-            <a href="mailto:support@forexai.com" className="text-purple-400 hover:underline">
+            <a href="mailto:support@forexedge.co.za" className="text-purple-400 hover:underline">
               Contact us
             </a>
           </p>

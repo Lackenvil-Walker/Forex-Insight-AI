@@ -6,7 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, TrendingUp, Mail, Lock, User, CheckCircle, Eye, EyeOff } from 'lucide-react';
+import { Loader2, Mail, Lock, User, CheckCircle, Eye, EyeOff } from 'lucide-react';
+import forexEdgeLogo from '@/assets/forex-edge-logo-full.png';
 
 export default function Signup() {
   const [, navigate] = useLocation();
@@ -55,9 +56,8 @@ export default function Signup() {
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 px-4">
         <div className="w-full max-w-md">
           <div className="text-center mb-8">
-            <Link href="/" className="inline-flex items-center gap-2 text-2xl font-bold text-white">
-              <TrendingUp className="w-8 h-8 text-blue-500" />
-              ForexAI
+            <Link href="/" className="inline-block">
+              <img src={forexEdgeLogo} alt="Forex Edge - Trade Smart" className="h-20 mx-auto object-contain" />
             </Link>
           </div>
 
@@ -89,17 +89,15 @@ export default function Signup() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 px-4 py-8">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <Link href="/" className="inline-flex items-center gap-2 text-2xl font-bold text-white">
-            <TrendingUp className="w-8 h-8 text-blue-500" />
-            ForexAI
+          <Link href="/" className="inline-block">
+            <img src={forexEdgeLogo} alt="Forex Edge - Trade Smart" className="h-24 mx-auto object-contain" />
           </Link>
-          <p className="text-slate-400 mt-2">AI-Powered Trading Intelligence</p>
         </div>
 
         <Card className="border-slate-700 bg-slate-800/50 backdrop-blur">
           <CardHeader>
             <CardTitle className="text-white">Create your account</CardTitle>
-            <CardDescription>Get started with ForexAI today</CardDescription>
+            <CardDescription>Get started with Forex Edge today</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
