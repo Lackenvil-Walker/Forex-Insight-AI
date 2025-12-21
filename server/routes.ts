@@ -549,16 +549,28 @@ export async function registerRoutes(
   app.get('/api/admin/api-keys-status', requireAdmin, async (req, res) => {
     try {
       const dbKeys = await storage.getAllApiKeyNames();
-      const status: Record<string, boolean> = {};
+      const status: Record<string, { configured: boolean; source: 'env' | 'database' | null }> = {};
       
-      // Check for AI provider keys (env var OR database)
-      status.groq = !!process.env.GROQ_API_KEY || dbKeys.includes('GROQ_API_KEY');
-      status.gemini = !!process.env.GEMINI_API_KEY || dbKeys.includes('GEMINI_API_KEY');
-      status.openai = !!process.env.CUSTOM_OPENAI_API_KEY || dbKeys.includes('CUSTOM_OPENAI_API_KEY');
+      const keysToCheck = [
+        'GROQ_API_KEY',
+        'GEMINI_API_KEY', 
+        'CUSTOM_OPENAI_API_KEY',
+        'RESEND_API_KEY',
+        'PAYSTACK_SECRET_KEY'
+      ];
       
-      // Check for other service keys
-      status.resend = !!process.env.RESEND_API_KEY || dbKeys.includes('RESEND_API_KEY');
-      status.paystack = !!process.env.PAYSTACK_SECRET_KEY || dbKeys.includes('PAYSTACK_SECRET_KEY');
+      for (const keyName of keysToCheck) {
+        const hasEnv = !!process.env[keyName];
+        const hasDb = dbKeys.includes(keyName);
+        
+        if (hasEnv) {
+          status[keyName] = { configured: true, source: 'env' };
+        } else if (hasDb) {
+          status[keyName] = { configured: true, source: 'database' };
+        } else {
+          status[keyName] = { configured: false, source: null };
+        }
+      }
       
       res.json(status);
     } catch (error) {

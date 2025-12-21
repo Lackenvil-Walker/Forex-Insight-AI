@@ -13,7 +13,7 @@ import { Switch as SwitchUI } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Users, DollarSign, Activity, AlertCircle, Save, CheckCircle2, XCircle, Loader2, Key, Plus, Minus, Coins, Pencil, Smartphone, Clock, Eye, Check, X, Ban, UserCheck, UserX, TrendingUp, CreditCard, Calendar, Rocket } from 'lucide-react';
+import { Users, DollarSign, Activity, AlertCircle, Save, CheckCircle2, XCircle, Loader2, Key, Plus, Minus, Coins, Pencil, Smartphone, Clock, Eye, Check, X, Ban, UserCheck, UserX, TrendingUp, CreditCard, Calendar, Rocket, Trash2 } from 'lucide-react';
 import { toast } from "sonner";
 import { formatDistanceToNow, format } from 'date-fns';
 import { queryClient } from '@/lib/queryClient';
@@ -1086,6 +1086,16 @@ function ApiKeysManager({ onSuccess }: { onSuccess: () => void }) {
     PAYSTACK_SECRET_KEY: '',
   });
   const [savingKey, setSavingKey] = useState<string | null>(null);
+  const [deletingKey, setDeletingKey] = useState<string | null>(null);
+
+  const { data: apiKeysStatus, refetch: refetchStatus } = useQuery({
+    queryKey: ['admin-api-keys-status'],
+    queryFn: async () => {
+      const response = await fetch('/api/admin/api-keys-status', { credentials: 'include' });
+      if (!response.ok) throw new Error('Failed to fetch API keys status');
+      return response.json();
+    },
+  });
 
   const saveKeyMutation = useMutation({
     mutationFn: async ({ keyName, value }: { keyName: string; value: string }) => {
@@ -1100,6 +1110,7 @@ function ApiKeysManager({ onSuccess }: { onSuccess: () => void }) {
     },
     onSuccess: (_, variables) => {
       setKeyValues(prev => ({ ...prev, [variables.keyName]: '' }));
+      refetchStatus();
       onSuccess();
       toast.success("API Key Saved", { description: `${variables.keyName} has been saved securely.` });
     },
@@ -1107,6 +1118,26 @@ function ApiKeysManager({ onSuccess }: { onSuccess: () => void }) {
       toast.error("Save Failed", { description: error.message });
     },
     onSettled: () => setSavingKey(null)
+  });
+
+  const deleteKeyMutation = useMutation({
+    mutationFn: async (keyName: string) => {
+      const response = await fetch(`/api/admin/api-keys/${keyName}`, {
+        method: 'DELETE',
+        credentials: 'include'
+      });
+      if (!response.ok) throw new Error('Failed to delete API key');
+      return response.json();
+    },
+    onSuccess: (_, keyName) => {
+      refetchStatus();
+      onSuccess();
+      toast.success("API Key Removed", { description: `${keyName} has been removed from the database.` });
+    },
+    onError: (error: Error) => {
+      toast.error("Delete Failed", { description: error.message });
+    },
+    onSettled: () => setDeletingKey(null)
   });
 
   const handleSaveKey = (keyName: string) => {
@@ -1117,6 +1148,16 @@ function ApiKeysManager({ onSuccess }: { onSuccess: () => void }) {
     }
     setSavingKey(keyName);
     saveKeyMutation.mutate({ keyName, value: value.trim() });
+  };
+
+  const handleDeleteKey = (keyName: string) => {
+    setDeletingKey(keyName);
+    deleteKeyMutation.mutate(keyName);
+  };
+
+  const getKeyStatus = (keyName: string) => {
+    if (!apiKeysStatus) return null;
+    return apiKeysStatus[keyName];
   };
 
   const apiKeyFields = [
@@ -1140,34 +1181,78 @@ function ApiKeysManager({ onSuccess }: { onSuccess: () => void }) {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        {apiKeyFields.map((field) => (
-          <div key={field.name} className="flex items-end gap-3 p-4 bg-muted/30 rounded-lg border border-border">
-            <div className="flex-1 space-y-2">
-              <Label htmlFor={field.name}>{field.label}</Label>
-              <p className="text-xs text-muted-foreground">{field.description}</p>
-              <Input
-                id={field.name}
-                type="password"
-                placeholder={field.placeholder}
-                value={keyValues[field.name]}
-                onChange={(e) => setKeyValues(prev => ({ ...prev, [field.name]: e.target.value }))}
-                data-testid={`input-${field.name}`}
-              />
+        {apiKeyFields.map((field) => {
+          const status = getKeyStatus(field.name);
+          const isConfigured = status?.configured;
+          const source = status?.source;
+          
+          return (
+            <div key={field.name} className="p-4 bg-muted/30 rounded-lg border border-border space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label htmlFor={field.name} className="text-base">{field.label}</Label>
+                  <p className="text-xs text-muted-foreground mt-1">{field.description}</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  {isConfigured ? (
+                    <Badge variant="default" className="bg-green-600">
+                      <CheckCircle2 className="w-3 h-3 mr-1" />
+                      {source === 'env' ? 'From ENV' : 'Configured'}
+                    </Badge>
+                  ) : (
+                    <Badge variant="secondary" className="bg-muted">
+                      <XCircle className="w-3 h-3 mr-1" />
+                      Not Set
+                    </Badge>
+                  )}
+                </div>
+              </div>
+              
+              <div className="flex items-end gap-3">
+                <div className="flex-1">
+                  <Input
+                    id={field.name}
+                    type="password"
+                    placeholder={isConfigured ? '••••••••••••' : field.placeholder}
+                    value={keyValues[field.name]}
+                    onChange={(e) => setKeyValues(prev => ({ ...prev, [field.name]: e.target.value }))}
+                    data-testid={`input-${field.name}`}
+                  />
+                </div>
+                <Button 
+                  onClick={() => handleSaveKey(field.name)} 
+                  disabled={savingKey === field.name || !keyValues[field.name].trim()}
+                  className="shrink-0"
+                  data-testid={`button-save-${field.name}`}
+                >
+                  {savingKey === field.name ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <>
+                      <Save className="w-4 h-4 mr-1" />
+                      {isConfigured ? 'Update' : 'Save'}
+                    </>
+                  )}
+                </Button>
+                {isConfigured && source === 'database' && (
+                  <Button 
+                    variant="destructive"
+                    size="icon"
+                    onClick={() => handleDeleteKey(field.name)} 
+                    disabled={deletingKey === field.name}
+                    data-testid={`button-delete-${field.name}`}
+                  >
+                    {deletingKey === field.name ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Trash2 className="w-4 h-4" />
+                    )}
+                  </Button>
+                )}
+              </div>
             </div>
-            <Button 
-              onClick={() => handleSaveKey(field.name)} 
-              disabled={savingKey === field.name || !keyValues[field.name].trim()}
-              className="shrink-0"
-              data-testid={`button-save-${field.name}`}
-            >
-              {savingKey === field.name ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <Save className="w-4 h-4" />
-              )}
-            </Button>
-          </div>
-        ))}
+          );
+        })}
         <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-md">
           <p className="text-sm text-amber-600 dark:text-amber-400">
             <strong>Note:</strong> If an API key is set in both environment variables and here, the environment variable takes priority.
