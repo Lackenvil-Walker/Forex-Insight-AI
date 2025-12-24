@@ -24,7 +24,10 @@ export default function Landing() {
             <Link href="/pricing">
               <Button variant="ghost" className="hidden md:inline-flex" data-testid="button-pricing">Pricing</Button>
             </Link>
-            <Link href="/dashboard">
+            <Link href="/login">
+              <Button variant="ghost" data-testid="button-login">Login</Button>
+            </Link>
+            <Link href="/signup">
               <Button data-testid="button-getstarted">Get Started</Button>
             </Link>
           </div>
