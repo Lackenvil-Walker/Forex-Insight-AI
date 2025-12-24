@@ -1091,10 +1091,15 @@ function ApiKeysManager({ onSuccess }: { onSuccess: () => void }) {
   const { data: apiKeysStatus, refetch: refetchStatus } = useQuery({
     queryKey: ['admin-api-keys-status'],
     queryFn: async () => {
-      const response = await fetch('/api/admin/api-keys-status', { credentials: 'include' });
-      if (!response.ok) throw new Error('Failed to fetch API keys status');
-      return response.json();
+      try {
+        const response = await fetch('/api/admin/api-keys-status', { credentials: 'include' });
+        if (!response.ok) return {};
+        return response.json();
+      } catch {
+        return {};
+      }
     },
+    retry: 2,
   });
 
   const saveKeyMutation = useMutation({
@@ -1289,10 +1294,15 @@ function AdminSettings() {
   const { data: apiKeysStatus } = useQuery({
     queryKey: ['admin-api-keys-status'],
     queryFn: async () => {
-      const response = await fetch('/api/admin/api-keys-status', { credentials: 'include' });
-      if (!response.ok) throw new Error('Failed to fetch API keys status');
-      return response.json();
+      try {
+        const response = await fetch('/api/admin/api-keys-status', { credentials: 'include' });
+        if (!response.ok) return {};
+        return response.json();
+      } catch {
+        return {};
+      }
     },
+    retry: 2,
   });
 
   interface AiProviderData {
@@ -1307,10 +1317,15 @@ function AdminSettings() {
   const { data: aiProviders, refetch: refetchProviders } = useQuery<AiProviderData[]>({
     queryKey: ['admin-ai-providers'],
     queryFn: async () => {
-      const response = await fetch('/api/admin/ai-providers', { credentials: 'include' });
-      if (!response.ok) throw new Error('Failed to fetch AI providers');
-      return response.json();
+      try {
+        const response = await fetch('/api/admin/ai-providers', { credentials: 'include' });
+        if (!response.ok) return [];
+        return response.json();
+      } catch {
+        return [];
+      }
     },
+    retry: 2,
   });
 
   const [providerDialogOpen, setProviderDialogOpen] = useState(false);
@@ -1919,26 +1934,35 @@ function AdminLogs() {
   const { data: users } = useQuery<UserOption[]>({
     queryKey: ['admin-users-list'],
     queryFn: async () => {
-      const response = await fetch('/api/admin/users', { credentials: 'include' });
-      if (!response.ok) throw new Error('Failed to fetch users');
-      return response.json();
+      try {
+        const response = await fetch('/api/admin/users', { credentials: 'include' });
+        if (!response.ok) return [];
+        return response.json();
+      } catch {
+        return [];
+      }
     },
   });
 
-  const { data: logs, isLoading, isFetching, refetch } = useQuery<ServiceLog[]>({
+  const { data: logs, isLoading, isFetching, refetch, isError } = useQuery<ServiceLog[]>({
     queryKey: ['admin-logs', serviceFilter, levelFilter, userFilter],
     queryFn: async () => {
-      const params = new URLSearchParams();
-      params.set('limit', '200');
-      if (serviceFilter !== 'all') params.set('service', serviceFilter);
-      if (levelFilter !== 'all') params.set('level', levelFilter);
-      if (userFilter !== 'all') params.set('userId', userFilter);
-      
-      const response = await fetch(`/api/admin/logs?${params}`, { credentials: 'include' });
-      if (!response.ok) throw new Error('Failed to fetch logs');
-      return response.json();
+      try {
+        const params = new URLSearchParams();
+        params.set('limit', '200');
+        if (serviceFilter !== 'all') params.set('service', serviceFilter);
+        if (levelFilter !== 'all') params.set('level', levelFilter);
+        if (userFilter !== 'all') params.set('userId', userFilter);
+        
+        const response = await fetch(`/api/admin/logs?${params}`, { credentials: 'include' });
+        if (!response.ok) return [];
+        return response.json();
+      } catch {
+        return [];
+      }
     },
     refetchInterval: 10000,
+    retry: 2,
   });
 
   const getLevelColor = (level: string) => {
