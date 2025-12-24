@@ -321,6 +321,28 @@ Remember: You MUST provide values for ALL fields including support, resistance, 
     return finalResult;
   } catch (error: any) {
     console.error("Error analyzing forex chart:", error);
-    throw new Error(`Failed to analyze chart: ${error.message}`);
+    
+    // Return a fallback result instead of throwing - analysis should never fail completely
+    const fallbackResult: ForexAnalysisResult = {
+      symbol: "Unable to detect",
+      timeframe: "Unable to detect",
+      trend: "neutral",
+      confidence: 0,
+      entry: "Analysis failed",
+      stopLoss: "Analysis failed",
+      takeProfit: ["Analysis failed"],
+      support: "Analysis failed",
+      resistance: "Analysis failed",
+      momentum: "Unable to analyze",
+      rsi: "Unable to analyze",
+      volume: "Unable to analyze",
+      reasoning: [
+        `Analysis error: ${error.message}`,
+        "Please try uploading a clearer chart image",
+        "Or check AI provider settings in Admin panel"
+      ]
+    };
+    
+    return fallbackResult;
   }
 }
