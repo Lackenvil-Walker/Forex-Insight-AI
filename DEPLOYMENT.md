@@ -19,11 +19,23 @@ cd forexai
 
 ### 2. Create Environment File
 
+The app automatically looks for environment files in this order:
+1. `/root/forex.env` (recommended for production servers)
+2. `.env` in the project directory
+
+**Option A: Use /root/forex.env (Recommended for Production)**
+
+```bash
+sudo nano /root/forex.env
+```
+
+**Option B: Use project .env file**
+
 ```bash
 cp .env.example .env
 ```
 
-Edit `.env` with your values:
+Edit your environment file with these values:
 
 ```bash
 # Required - Generate with: openssl rand -hex 32

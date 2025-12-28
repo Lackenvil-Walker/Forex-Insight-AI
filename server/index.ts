@@ -1,3 +1,6 @@
+import dotenv from "dotenv";
+import { existsSync } from "fs";
+import { resolve } from "path";
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
@@ -5,6 +8,18 @@ import { createServer } from "http";
 import { setupSession } from "./session";
 import { seedAdminUser } from "./storage";
 import { logError } from "./logger";
+
+// Load environment variables from /root/forex.env for production deployments
+const prodEnvPath = "/root/forex.env";
+const localEnvPath = resolve(process.cwd(), ".env");
+
+if (existsSync(prodEnvPath)) {
+  console.log(`Loading environment from ${prodEnvPath}`);
+  dotenv.config({ path: prodEnvPath });
+} else if (existsSync(localEnvPath)) {
+  console.log(`Loading environment from ${localEnvPath}`);
+  dotenv.config({ path: localEnvPath });
+}
 
 const app = express();
 const httpServer = createServer(app);
