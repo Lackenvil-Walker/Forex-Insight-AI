@@ -5,17 +5,12 @@ services:
     build: .
     ports:
       - "5000:5000"
+    volumes:
+      - /root/forex.env:/root/forex.env:ro
     environment:
       - NODE_ENV=production
       - PORT=5000
       - DATABASE_URL=postgresql://postgres:${POSTGRES_PASSWORD:-forexai_password}@db:5432/forexai
-      - SESSION_SECRET=${SESSION_SECRET}
-      - GROQ_API_KEY=${GROQ_API_KEY:-}
-      - CUSTOM_OPENAI_API_KEY=${CUSTOM_OPENAI_API_KEY:-}
-      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
-      - RESEND_API_KEY=${RESEND_API_KEY:-}
-      - PAYSTACK_SECRET_KEY=${PAYSTACK_SECRET_KEY:-}
-      - ADMIN_EMAILS=${ADMIN_EMAILS:-}
       - PGHOST=db
       - PGPORT=5432
       - PGUSER=postgres
@@ -30,7 +25,7 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 10s
+      start_period: 30s
 
   db:
     image: postgres:15-alpine

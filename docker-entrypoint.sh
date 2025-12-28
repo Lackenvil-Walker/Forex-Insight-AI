@@ -5,6 +5,19 @@ echo "=========================================="
 echo "Forex Edge - Environment Validation"
 echo "=========================================="
 
+# Load environment from /root/forex.env if it exists
+if [ -f /root/forex.env ]; then
+  echo "Loading environment from /root/forex.env"
+  set -a
+  . /root/forex.env
+  set +a
+elif [ -f /app/.env ]; then
+  echo "Loading environment from /app/.env"
+  set -a
+  . /app/.env
+  set +a
+fi
+
 MISSING_VARS=""
 
 # Required variables
