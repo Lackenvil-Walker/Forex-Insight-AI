@@ -58,52 +58,52 @@
   --color-sidebar-ring: hsl(var(--sidebar-ring));
 }
 
-/* Dark Future Finance Theme */
+/* Silver & Black Premium Theme - Matching Logo */
 :root {
-  --background: 240 10% 3.9%; /* Very dark grey/black */
-  --foreground: 0 0% 98%;
+  --background: 0 0% 2%; /* Pure black */
+  --foreground: 0 0% 95%;
 
-  --card: 240 10% 5%; /* Slightly lighter than background */
-  --card-foreground: 0 0% 98%;
+  --card: 0 0% 6%; /* Slightly lighter than background */
+  --card-foreground: 0 0% 95%;
 
-  --popover: 240 10% 3.9%;
-  --popover-foreground: 0 0% 98%;
+  --popover: 0 0% 4%;
+  --popover-foreground: 0 0% 95%;
 
-  --primary: 142 71% 45%; /* Neon Green (Success/Profit) */
-  --primary-foreground: 144 100% 5%; /* Black text on green */
+  --primary: 0 0% 75%; /* Silver/Metallic */
+  --primary-foreground: 0 0% 5%; /* Black text on silver */
 
-  --secondary: 240 4% 16%; /* Dark Grey */
-  --secondary-foreground: 0 0% 98%;
+  --secondary: 0 0% 12%; /* Dark Grey */
+  --secondary-foreground: 0 0% 95%;
 
-  --muted: 240 4% 16%;
-  --muted-foreground: 240 5% 64.9%;
+  --muted: 0 0% 15%;
+  --muted-foreground: 0 0% 60%;
 
-  --accent: 240 4% 16%;
-  --accent-foreground: 0 0% 98%;
+  --accent: 0 0% 20%; /* Lighter grey for accents */
+  --accent-foreground: 0 0% 95%;
 
-  --destructive: 0 84% 60%; /* Red (Loss/Danger) */
+  --destructive: 0 72% 51%; /* Red (Loss/Danger) */
   --destructive-foreground: 0 0% 98%;
 
-  --border: 240 4% 16%;
-  --input: 240 4% 16%;
-  --ring: 142 71% 45%;
+  --border: 0 0% 18%;
+  --input: 0 0% 12%;
+  --ring: 0 0% 70%;
 
   --radius: 0.5rem;
 
-  --chart-1: 142 71% 45%; /* Green */
-  --chart-2: 0 84% 60%;   /* Red */
-  --chart-3: 30 80% 55%;  /* Orange */
-  --chart-4: 280 65% 60%; /* Purple */
-  --chart-5: 160 60% 45%; /* Teal */
+  --chart-1: 142 71% 45%; /* Green for profit */
+  --chart-2: 0 72% 51%;   /* Red for loss */
+  --chart-3: 0 0% 60%;    /* Silver */
+  --chart-4: 0 0% 40%;    /* Dark silver */
+  --chart-5: 0 0% 80%;    /* Light silver */
 
-  --sidebar: 240 10% 3.9%;
-  --sidebar-foreground: 240 4.8% 95.9%;
-  --sidebar-primary: 142 71% 45%;
-  --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent: 240 4% 16%;
-  --sidebar-accent-foreground: 240 4.8% 95.9%;
-  --sidebar-border: 240 4% 16%;
-  --sidebar-ring: 142 71% 45%;
+  --sidebar: 0 0% 3%;
+  --sidebar-foreground: 0 0% 90%;
+  --sidebar-primary: 0 0% 75%;
+  --sidebar-primary-foreground: 0 0% 5%;
+  --sidebar-accent: 0 0% 15%;
+  --sidebar-accent-foreground: 0 0% 90%;
+  --sidebar-border: 0 0% 18%;
+  --sidebar-ring: 0 0% 70%;
 }
 
 @layer base {
@@ -134,14 +134,23 @@
 /* Custom Utility Classes */
 @layer utilities {
   .text-glow {
-    text-shadow: 0 0 10px hsla(var(--primary), 0.5);
+    text-shadow: 0 0 15px rgba(180, 180, 180, 0.6);
   }
   .border-glow {
-    box-shadow: 0 0 10px hsla(var(--primary), 0.2);
+    box-shadow: 0 0 15px rgba(180, 180, 180, 0.15);
   }
   .bg-grid-pattern {
-    background-image: linear-gradient(to right, #202020 1px, transparent 1px),
-      linear-gradient(to bottom, #202020 1px, transparent 1px);
+    background-image: linear-gradient(to right, #1a1a1a 1px, transparent 1px),
+      linear-gradient(to bottom, #1a1a1a 1px, transparent 1px);
     background-size: 24px 24px;
+  }
+  .metallic-gradient {
+    background: linear-gradient(135deg, #2a2a2a 0%, #4a4a4a 25%, #6a6a6a 50%, #4a4a4a 75%, #2a2a2a 100%);
+  }
+  .silver-text {
+    background: linear-gradient(180deg, #e0e0e0 0%, #a0a0a0 50%, #c0c0c0 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
   }
 }
