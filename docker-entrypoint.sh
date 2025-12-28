@@ -59,6 +59,40 @@ fi
 
 echo ""
 echo "Required environment variables are set."
+echo ""
+
+# Wait for database to be ready
+echo "Waiting for database to be ready..."
+MAX_RETRIES=30
+RETRY_COUNT=0
+until PGPASSWORD="${PGPASSWORD:-}" psql -h "${PGHOST:-db}" -U "${PGUSER:-postgres}" -d "${PGDATABASE:-forexai}" -c "SELECT 1" > /dev/null 2>&1; do
+  RETRY_COUNT=$((RETRY_COUNT + 1))
+  if [ $RETRY_COUNT -ge $MAX_RETRIES ]; then
+    echo "ERROR: Database not ready after $MAX_RETRIES attempts"
+    exit 1
+  fi
+  echo "  Attempt $RETRY_COUNT/$MAX_RETRIES - waiting..."
+  sleep 2
+done
+echo "Database is ready!"
+
+# Check if tables exist, if not run init script
+echo "Checking database tables..."
+TABLE_EXISTS=$(PGPASSWORD="${PGPASSWORD:-}" psql -h "${PGHOST:-db}" -U "${PGUSER:-postgres}" -d "${PGDATABASE:-forexai}" -tAc "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'users');")
+
+if [ "$TABLE_EXISTS" = "f" ]; then
+  echo "Tables not found - initializing database..."
+  if [ -f /app/scripts/init-db.sql ]; then
+    PGPASSWORD="${PGPASSWORD:-}" psql -h "${PGHOST:-db}" -U "${PGUSER:-postgres}" -d "${PGDATABASE:-forexai}" -f /app/scripts/init-db.sql
+    echo "Database initialized successfully!"
+  else
+    echo "WARNING: init-db.sql not found, tables will be created by ORM"
+  fi
+else
+  echo "Database tables already exist."
+fi
+
+echo ""
 echo "Starting Forex Edge..."
 echo "=========================================="
 

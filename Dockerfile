@@ -27,6 +27,9 @@ FROM node:20-alpine AS production
 
 WORKDIR /app
 
+# Install PostgreSQL client for database initialization
+RUN apk add --no-cache postgresql-client
+
 # Install production dependencies only
 COPY package*.json ./
 RUN npm ci --omit=dev && npm cache clean --force
@@ -35,6 +38,9 @@ RUN npm ci --omit=dev && npm cache clean --force
 # dist/index.cjs = bundled server
 # dist/public = built client assets
 COPY --from=builder /app/dist ./dist
+
+# Copy database init script for automatic table creation
+COPY --from=builder /app/scripts/init-db.sql ./scripts/init-db.sql
 
 # Copy entrypoint script for environment validation
 COPY docker-entrypoint.sh /usr/local/bin/
