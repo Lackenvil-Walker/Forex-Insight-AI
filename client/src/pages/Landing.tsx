@@ -58,7 +58,7 @@ export default function Landing() {
             </div>
             <h1 className="text-4xl md:text-7xl font-bold tracking-tighter mb-6 max-w-4xl mx-auto leading-tight">
               Trade Smarter with <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-white to-primary text-glow">Institutional Intelligence</span>
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-gray-300 via-white to-primary text-glow">Institutional Intelligence</span>
             </h1>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed">
               Upload your chart. Our AI analyzes market structure, price action, and indicators to give you institutional-grade trading setups in seconds.
@@ -139,7 +139,7 @@ export default function Landing() {
             </Card>
 
             {/* Pro Plan */}
-            <Card className="relative overflow-hidden border-primary shadow-[0_0_40px_rgba(180,180,180,0.15)]">
+            <Card className="relative overflow-hidden border-primary shadow-[0_0_40px_rgba(34,197,94,0.15)]">
               <div className="absolute top-0 right-0 bg-primary text-black text-xs font-bold px-3 py-1 rounded-bl-lg">POPULAR</div>
               <CardHeader>
                 <CardTitle className="text-2xl">Pro Trader</CardTitle>
