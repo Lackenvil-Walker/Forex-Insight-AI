@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, Mail, Lock, Eye, EyeOff } from 'lucide-react';
 import forexEdgeLogo from '@/assets/forex-edge-logo-full.png';
+import generatedImage from '@assets/generated_images/dark_abstract_digital_financial_data_visualization_background.png';
 
 export default function Login() {
   const [, navigate] = useLocation();
@@ -42,15 +43,24 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background px-4">
-      <div className="w-full max-w-md">
+    <div className="min-h-screen flex items-center justify-center bg-background px-4 relative overflow-hidden">
+      <div className="absolute inset-0 z-0">
+        <img 
+          src={generatedImage} 
+          alt="Background" 
+          className="w-full h-full object-cover opacity-40"
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-background via-background/80 to-background" />
+      </div>
+
+      <div className="w-full max-w-md relative z-10">
         <div className="text-center mb-8">
           <Link href="/" className="inline-block">
             <img src={forexEdgeLogo} alt="Forex Edge - Trade Smart" className="h-24 mx-auto object-contain" />
           </Link>
         </div>
 
-        <Card className="border-border bg-card/50 backdrop-blur">
+        <Card className="border-border bg-card/80 backdrop-blur-md">
           <CardHeader>
             <CardTitle className="text-foreground">Welcome back</CardTitle>
             <CardDescription>Sign in to your account to continue</CardDescription>
