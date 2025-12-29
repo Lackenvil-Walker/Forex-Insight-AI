@@ -781,9 +781,9 @@ export async function registerRoutes(
       // Seed default packages if none exist
       if (packages.length === 0) {
         const defaultPackages = [
-          { name: 'Starter', credits: 10, priceZar: 5000, description: '10 chart analyses' },
-          { name: 'Pro', credits: 50, priceZar: 20000, description: '50 chart analyses - Best value!' },
-          { name: 'Enterprise', credits: 200, priceZar: 60000, description: '200 chart analyses for serious traders' },
+          { name: 'Starter', credits: 60, priceZar: 500, description: '60 chart analyses' },
+          { name: 'Pro Trader', credits: 130, priceZar: 1000, description: '130 chart analyses - Best value!' },
+          { name: 'Institution', credits: 0, priceZar: 0, description: 'Contact admin@silverock.co.za for custom pricing' },
         ];
         
         for (const pkg of defaultPackages) {

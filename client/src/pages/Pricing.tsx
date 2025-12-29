@@ -36,8 +36,8 @@ const AIRTEL_MONEY_NUMBER = "0978264084";
 
 const tierIcons: Record<string, React.ReactNode> = {
   Starter: <Zap className="h-8 w-8 text-blue-500" />,
-  Pro: <Sparkles className="h-8 w-8 text-purple-500" />,
-  Enterprise: <Crown className="h-8 w-8 text-yellow-500" />,
+  "Pro Trader": <Sparkles className="h-8 w-8 text-purple-500" />,
+  Institution: <Crown className="h-8 w-8 text-yellow-500" />,
 };
 
 export default function Pricing() {
@@ -212,8 +212,7 @@ export default function Pricing() {
   };
 
   const formatPriceUSD = (priceInCents: number) => {
-    const zarAmount = priceInCents / 100;
-    const usdAmount = zarAmount / 18;
+    const usdAmount = priceInCents / 100;
     return new Intl.NumberFormat("en-US", {
       style: "currency",
       currency: "USD",
@@ -297,7 +296,8 @@ export default function Pricing() {
         ) : (
           <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
             {packages.map((pkg, index) => {
-              const isPopular = pkg.name === "Pro";
+              const isPopular = pkg.name === "Pro Trader";
+              const isInstitution = pkg.name === "Institution";
 
               return (
                 <motion.div
@@ -327,74 +327,122 @@ export default function Pricing() {
                         {pkg.name}
                       </CardTitle>
                       <CardDescription className="text-muted-foreground">
-                        {pkg.description}
+                        {isInstitution ? "Custom pricing for institutions" : pkg.description}
                       </CardDescription>
                     </CardHeader>
                     <CardContent className="text-center">
                       <div className="mb-6">
-                        <span className="text-4xl font-bold text-foreground" data-testid={`text-price-${pkg.id}`}>
-                          {formatPriceZAR(pkg.priceZar)}
-                        </span>
-                        <p className="text-sm text-muted-foreground mt-1">
-                          {formatPriceUSD(pkg.priceZar)} USD
-                        </p>
+                        {isInstitution ? (
+                          <span className="text-4xl font-bold text-foreground" data-testid={`text-price-${pkg.id}`}>
+                            Custom
+                          </span>
+                        ) : (
+                          <>
+                            <span className="text-4xl font-bold text-foreground" data-testid={`text-price-${pkg.id}`}>
+                              {formatPriceUSD(pkg.priceZar)}
+                            </span>
+                          </>
+                        )}
                       </div>
                       <ul className="space-y-3 text-left">
-                        <li className="flex items-center gap-3">
-                          <Check className="h-5 w-5 text-green-500 flex-shrink-0" />
-                          <span className="text-foreground/80 text-sm">
-                            {pkg.credits} chart analyses
-                          </span>
-                        </li>
-                        <li className="flex items-center gap-3">
-                          <Check className="h-5 w-5 text-green-500 flex-shrink-0" />
-                          <span className="text-foreground/80 text-sm">
-                            Entry, exit & stop-loss levels
-                          </span>
-                        </li>
-                        <li className="flex items-center gap-3">
-                          <Check className="h-5 w-5 text-green-500 flex-shrink-0" />
-                          <span className="text-foreground/80 text-sm">
-                            Detailed trading insights
-                          </span>
-                        </li>
-                        <li className="flex items-center gap-3">
-                          <Check className="h-5 w-5 text-green-500 flex-shrink-0" />
-                          <span className="text-foreground/80 text-sm">
-                            Never expires
-                          </span>
-                        </li>
+                        {isInstitution ? (
+                          <>
+                            <li className="flex items-center gap-3">
+                              <Check className="h-5 w-5 text-green-500 flex-shrink-0" />
+                              <span className="text-foreground/80 text-sm">
+                                Unlimited chart analyses
+                              </span>
+                            </li>
+                            <li className="flex items-center gap-3">
+                              <Check className="h-5 w-5 text-green-500 flex-shrink-0" />
+                              <span className="text-foreground/80 text-sm">
+                                Priority support
+                              </span>
+                            </li>
+                            <li className="flex items-center gap-3">
+                              <Check className="h-5 w-5 text-green-500 flex-shrink-0" />
+                              <span className="text-foreground/80 text-sm">
+                                Custom integrations
+                              </span>
+                            </li>
+                            <li className="flex items-center gap-3">
+                              <Check className="h-5 w-5 text-green-500 flex-shrink-0" />
+                              <span className="text-foreground/80 text-sm">
+                                Dedicated account manager
+                              </span>
+                            </li>
+                          </>
+                        ) : (
+                          <>
+                            <li className="flex items-center gap-3">
+                              <Check className="h-5 w-5 text-green-500 flex-shrink-0" />
+                              <span className="text-foreground/80 text-sm">
+                                {pkg.credits} chart analyses
+                              </span>
+                            </li>
+                            <li className="flex items-center gap-3">
+                              <Check className="h-5 w-5 text-green-500 flex-shrink-0" />
+                              <span className="text-foreground/80 text-sm">
+                                Entry, exit & stop-loss levels
+                              </span>
+                            </li>
+                            <li className="flex items-center gap-3">
+                              <Check className="h-5 w-5 text-green-500 flex-shrink-0" />
+                              <span className="text-foreground/80 text-sm">
+                                Detailed trading insights
+                              </span>
+                            </li>
+                            <li className="flex items-center gap-3">
+                              <Check className="h-5 w-5 text-green-500 flex-shrink-0" />
+                              <span className="text-foreground/80 text-sm">
+                                Never expires
+                              </span>
+                            </li>
+                          </>
+                        )}
                       </ul>
                     </CardContent>
                     <CardFooter className="flex flex-col gap-2">
-                      <Button
-                        className={`w-full ${
-                          isPopular
-                            ? ""
-                            : "bg-muted hover:bg-muted/80 text-foreground"
-                        }`}
-                        onClick={() => handlePurchase(pkg.id)}
-                        disabled={initializeMutation.isPending || verifyMutation.isPending}
-                        data-testid={`button-buy-${pkg.id}`}
-                      >
-                        {initializeMutation.isPending || verifyMutation.isPending ? (
-                          <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Processing...
-                          </>
-                        ) : (
-                          `Pay with Card`
-                        )}
-                      </Button>
-                      <Button
-                        variant="outline"
-                        className="w-full border-red-500/50 text-red-400 hover:bg-red-500/10 hover:text-red-300"
-                        onClick={() => handleMobilePayment(pkg)}
-                        data-testid={`button-mobile-${pkg.id}`}
-                      >
-                        <Smartphone className="mr-2 h-4 w-4" />
-                        Pay with Airtel Money
-                      </Button>
+                      {isInstitution ? (
+                        <Button
+                          className="w-full bg-yellow-600 hover:bg-yellow-700 text-white"
+                          onClick={() => window.location.href = "mailto:admin@silverock.co.za"}
+                          data-testid={`button-contact-${pkg.id}`}
+                        >
+                          Contact Us
+                        </Button>
+                      ) : (
+                        <>
+                          <Button
+                            className={`w-full ${
+                              isPopular
+                                ? ""
+                                : "bg-muted hover:bg-muted/80 text-foreground"
+                            }`}
+                            onClick={() => handlePurchase(pkg.id)}
+                            disabled={initializeMutation.isPending || verifyMutation.isPending}
+                            data-testid={`button-buy-${pkg.id}`}
+                          >
+                            {initializeMutation.isPending || verifyMutation.isPending ? (
+                              <>
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                Processing...
+                              </>
+                            ) : (
+                              `Pay with Card`
+                            )}
+                          </Button>
+                          <Button
+                            variant="outline"
+                            className="w-full border-red-500/50 text-red-400 hover:bg-red-500/10 hover:text-red-300"
+                            onClick={() => handleMobilePayment(pkg)}
+                            data-testid={`button-mobile-${pkg.id}`}
+                          >
+                            <Smartphone className="mr-2 h-4 w-4" />
+                            Pay with Airtel Money
+                          </Button>
+                        </>
+                      )}
                     </CardFooter>
                   </Card>
                 </motion.div>
