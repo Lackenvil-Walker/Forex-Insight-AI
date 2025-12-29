@@ -66,9 +66,12 @@ export default function Signup() {
               <div className="text-center">
                 <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
                 <h2 className="text-xl font-semibold text-white mb-2">Check your email</h2>
-                <p className="text-muted-foreground mb-6">
+                <p className="text-muted-foreground mb-4">
                   We've sent a verification link to <strong className="text-foreground">{email}</strong>. 
                   Please click the link to verify your account.
+                </p>
+                <p className="text-muted-foreground text-sm mb-6">
+                  <strong>Note:</strong> If you don't see this email in your inbox, please check your spam or junk folder.
                 </p>
                 <Button
                   onClick={() => navigate('/login')}
