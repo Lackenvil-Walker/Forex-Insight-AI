@@ -22,7 +22,7 @@ export async function sendVerificationEmail(to: string, token: string): Promise<
     const verifyUrl = `${baseUrl}/verify-email?token=${token}`;
     
     const { error } = await client.emails.send({
-      from: 'Forex Edge <onboarding@resend.dev>',
+      from: 'Forex Edge <noreply@silverock.co.za>',
       to: [to],
       subject: 'Verify your Forex Edge account',
       html: `
