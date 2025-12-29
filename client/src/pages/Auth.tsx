@@ -39,7 +39,7 @@ export default function Auth() {
       <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/20 rounded-full blur-[128px] pointer-events-none" />
       <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-blue-600/10 rounded-full blur-[128px] pointer-events-none" />
 
-      <Card className="w-full max-w-md border-white/10 bg-black/50 backdrop-blur-lg">
+      <Card className="w-full max-w-md border-border bg-card/50 backdrop-blur-lg">
         <CardHeader className="text-center">
           <div className="mx-auto w-12 h-12 bg-primary rounded-xl flex items-center justify-center text-black font-mono font-bold text-xl mb-4">F</div>
           <CardTitle className="text-2xl">Welcome Back</CardTitle>
@@ -61,14 +61,14 @@ export default function Auth() {
                     type="email" 
                     placeholder="trader@example.com" 
                     required 
-                    className="bg-white/5 border-white/10" 
+                    className="bg-muted/50 border-border" 
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                   />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="password">Password</Label>
-                  <Input id="password" type="password" required className="bg-white/5 border-white/10" />
+                  <Input id="password" type="password" required className="bg-muted/50 border-border" />
                 </div>
                 <Button className="w-full mt-4" type="submit" disabled={isLoading}>
                   {isLoading ? 'Authenticating...' : 'Sign In'}
@@ -80,15 +80,15 @@ export default function Auth() {
               <form onSubmit={handleAuth} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="name">Full Name</Label>
-                  <Input id="name" placeholder="John Doe" required className="bg-white/5 border-white/10" />
+                  <Input id="name" placeholder="John Doe" required className="bg-muted/50 border-border" />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="email-reg">Email</Label>
-                  <Input id="email-reg" type="email" placeholder="trader@example.com" required className="bg-white/5 border-white/10" />
+                  <Input id="email-reg" type="email" placeholder="trader@example.com" required className="bg-muted/50 border-border" />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="password-reg">Password</Label>
-                  <Input id="password-reg" type="password" required className="bg-white/5 border-white/10" />
+                  <Input id="password-reg" type="password" required className="bg-muted/50 border-border" />
                 </div>
                 <Button className="w-full mt-4" type="submit" disabled={isLoading}>
                   {isLoading ? 'Creating Account...' : 'Create Account'}

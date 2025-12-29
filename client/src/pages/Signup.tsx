@@ -53,7 +53,7 @@ export default function Signup() {
 
   if (success) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 px-4">
+      <div className="min-h-screen flex items-center justify-center bg-background px-4">
         <div className="w-full max-w-md">
           <div className="text-center mb-8">
             <Link href="/" className="inline-block">
@@ -61,18 +61,17 @@ export default function Signup() {
             </Link>
           </div>
 
-          <Card className="border-slate-700 bg-slate-800/50 backdrop-blur">
+          <Card className="border-border bg-card/50 backdrop-blur">
             <CardContent className="pt-6">
               <div className="text-center">
                 <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
                 <h2 className="text-xl font-semibold text-white mb-2">Check your email</h2>
-                <p className="text-slate-400 mb-6">
-                  We've sent a verification link to <strong className="text-white">{email}</strong>. 
+                <p className="text-muted-foreground mb-6">
+                  We've sent a verification link to <strong className="text-foreground">{email}</strong>. 
                   Please click the link to verify your account.
                 </p>
                 <Button
                   onClick={() => navigate('/login')}
-                  className="bg-blue-600 hover:bg-blue-700"
                   data-testid="button-go-to-login"
                 >
                   Go to Login
@@ -86,7 +85,7 @@ export default function Signup() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 px-4 py-8">
+    <div className="min-h-screen flex items-center justify-center bg-background px-4 py-8">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <Link href="/" className="inline-block">
@@ -94,7 +93,7 @@ export default function Signup() {
           </Link>
         </div>
 
-        <Card className="border-slate-700 bg-slate-800/50 backdrop-blur">
+        <Card className="border-border bg-card/50 backdrop-blur">
           <CardHeader>
             <CardTitle className="text-white">Create your account</CardTitle>
             <CardDescription>Get started with Forex Edge today</CardDescription>
@@ -109,45 +108,45 @@ export default function Signup() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="firstName" className="text-slate-200">First Name</Label>
+                  <Label htmlFor="firstName" className="text-foreground">First Name</Label>
                   <div className="relative">
-                    <User className="absolute left-3 top-2.5 h-5 w-5 text-slate-400" />
+                    <User className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
                     <Input
                       id="firstName"
                       type="text"
                       placeholder="John"
                       value={firstName}
                       onChange={(e) => setFirstName(e.target.value)}
-                      className="pl-10 bg-slate-700/50 border-slate-600 text-white placeholder:text-slate-400"
+                      className="pl-10 bg-muted/50 border-border text-foreground placeholder:text-muted-foreground"
                       data-testid="input-firstname"
                     />
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="lastName" className="text-slate-200">Last Name</Label>
+                  <Label htmlFor="lastName" className="text-foreground">Last Name</Label>
                   <Input
                     id="lastName"
                     type="text"
                     placeholder="Doe"
                     value={lastName}
                     onChange={(e) => setLastName(e.target.value)}
-                    className="bg-slate-700/50 border-slate-600 text-white placeholder:text-slate-400"
+                    className="bg-muted/50 border-border text-foreground placeholder:text-muted-foreground"
                     data-testid="input-lastname"
                   />
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-slate-200">Email</Label>
+                <Label htmlFor="email" className="text-foreground">Email</Label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-2.5 h-5 w-5 text-slate-400" />
+                  <Mail className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
                   <Input
                     id="email"
                     type="email"
                     placeholder="you@example.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="pl-10 bg-slate-700/50 border-slate-600 text-white placeholder:text-slate-400"
+                    className="pl-10 bg-muted/50 border-border text-foreground placeholder:text-muted-foreground"
                     required
                     data-testid="input-email"
                   />
@@ -155,23 +154,23 @@ export default function Signup() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="password" className="text-slate-200">Password</Label>
+                <Label htmlFor="password" className="text-foreground">Password</Label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-2.5 h-5 w-5 text-slate-400" />
+                  <Lock className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
                   <Input
                     id="password"
                     type={showPassword ? "text" : "password"}
                     placeholder="At least 8 characters"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="pl-10 pr-10 bg-slate-700/50 border-slate-600 text-white placeholder:text-slate-400"
+                    className="pl-10 pr-10 bg-muted/50 border-border text-foreground placeholder:text-muted-foreground"
                     required
                     data-testid="input-password"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-300"
+                    className="absolute right-3 top-2.5 text-muted-foreground hover:text-foreground"
                     data-testid="button-toggle-password"
                   >
                     {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
@@ -180,23 +179,23 @@ export default function Signup() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="confirmPassword" className="text-slate-200">Confirm Password</Label>
+                <Label htmlFor="confirmPassword" className="text-foreground">Confirm Password</Label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-2.5 h-5 w-5 text-slate-400" />
+                  <Lock className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
                   <Input
                     id="confirmPassword"
                     type={showConfirmPassword ? "text" : "password"}
                     placeholder="Confirm your password"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    className="pl-10 pr-10 bg-slate-700/50 border-slate-600 text-white placeholder:text-slate-400"
+                    className="pl-10 pr-10 bg-muted/50 border-border text-foreground placeholder:text-muted-foreground"
                     required
                     data-testid="input-confirm-password"
                   />
                   <button
                     type="button"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-300"
+                    className="absolute right-3 top-2.5 text-muted-foreground hover:text-foreground"
                     data-testid="button-toggle-confirm-password"
                   >
                     {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
@@ -206,7 +205,7 @@ export default function Signup() {
 
               <Button
                 type="submit"
-                className="w-full bg-blue-600 hover:bg-blue-700"
+                className="w-full"
                 disabled={isSigningUp}
                 data-testid="button-signup"
               >
@@ -221,10 +220,10 @@ export default function Signup() {
               </Button>
             </form>
 
-            <div className="mt-6 text-center text-slate-400">
+            <div className="mt-6 text-center text-muted-foreground">
               <p>
                 Already have an account?{' '}
-                <Link href="/login" className="text-blue-400 hover:text-blue-300 underline" data-testid="link-login">
+                <Link href="/login" className="text-primary hover:text-primary/80 underline" data-testid="link-login">
                   Sign in
                 </Link>
               </p>
@@ -232,8 +231,8 @@ export default function Signup() {
           </CardContent>
         </Card>
 
-        <p className="text-center text-slate-500 text-sm mt-6">
-          <Link href="/" className="hover:text-slate-400">
+        <p className="text-center text-muted-foreground text-sm mt-6">
+          <Link href="/" className="hover:text-foreground">
             Back to home
           </Link>
         </p>
