@@ -20,6 +20,9 @@ COPY . .
 # Build the application (bundles server to dist/index.cjs, client to dist/public)
 RUN npm run build
 
+# Verify build output exists
+RUN ls -la dist/ && test -f dist/index.cjs
+
 # ==========================================
 # Stage 2: Production
 # ==========================================
