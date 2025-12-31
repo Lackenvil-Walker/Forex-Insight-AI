@@ -32,7 +32,7 @@ import {
   apiKeys,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, desc } from "drizzle-orm";
+import { eq, and, desc, sql, count, max, gte } from "drizzle-orm";
 
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
@@ -48,6 +48,10 @@ export interface IStorage {
   createAnalysis(analysis: InsertAnalysis): Promise<Analysis>;
   getAnalysis(id: string): Promise<Analysis | undefined>;
   getAnalysesByUser(userId: string): Promise<Analysis[]>;
+  getAllAnalyses(): Promise<Analysis[]>;
+  getUserAnalysisStats(): Promise<{ userId: string; count: number; lastAnalysis: Date | null }[]>;
+  getRecentAnalysesCount(days: number): Promise<number>;
+  getAnalysesByDay(days: number): Promise<Record<string, number>>;
   
   getSystemConfig(): Promise<SystemConfig | undefined>;
   createSystemConfig(config: InsertSystemConfig): Promise<SystemConfig>;
@@ -155,6 +159,62 @@ export class DatabaseStorage implements IStorage {
       .from(analyses)
       .where(eq(analyses.userId, userId))
       .orderBy(desc(analyses.createdAt));
+  }
+
+  async getAllAnalyses(): Promise<Analysis[]> {
+    return await db
+      .select()
+      .from(analyses)
+      .orderBy(desc(analyses.createdAt));
+  }
+
+  async getUserAnalysisStats(): Promise<{ userId: string; count: number; lastAnalysis: Date | null }[]> {
+    const result = await db
+      .select({
+        userId: analyses.userId,
+        count: count(analyses.id),
+        lastAnalysis: max(analyses.createdAt),
+      })
+      .from(analyses)
+      .groupBy(analyses.userId);
+    
+    return result.map(r => ({
+      userId: r.userId,
+      count: Number(r.count),
+      lastAnalysis: r.lastAnalysis
+    }));
+  }
+
+  async getRecentAnalysesCount(days: number): Promise<number> {
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - days);
+    
+    const result = await db
+      .select({ count: count(analyses.id) })
+      .from(analyses)
+      .where(gte(analyses.createdAt, cutoffDate));
+    
+    return Number(result[0]?.count || 0);
+  }
+
+  async getAnalysesByDay(days: number): Promise<Record<string, number>> {
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - days);
+    
+    const result = await db
+      .select({
+        day: sql<string>`DATE(${analyses.createdAt})::text`,
+        count: count(analyses.id),
+      })
+      .from(analyses)
+      .where(gte(analyses.createdAt, cutoffDate))
+      .groupBy(sql`DATE(${analyses.createdAt})`);
+    
+    const byDay: Record<string, number> = {};
+    for (const row of result) {
+      byDay[row.day] = Number(row.count);
+    }
+    return byDay;
   }
 
   async getSystemConfig(): Promise<SystemConfig | undefined> {

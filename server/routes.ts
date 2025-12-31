@@ -773,6 +773,54 @@ export async function registerRoutes(
     }
   });
 
+  // Credit reports endpoint
+  app.get('/api/admin/credit-reports', requireAdmin, async (req, res) => {
+    try {
+      const users = await storage.getAllUsers();
+      const userAnalysisStats = await storage.getUserAnalysisStats();
+      
+      // Create a map for quick lookup
+      const statsMap = new Map(userAnalysisStats.map(s => [s.userId, s]));
+      
+      // Build report data
+      const userCredits = users.map(u => ({
+        id: u.id,
+        email: u.email,
+        firstName: u.firstName,
+        lastName: u.lastName,
+        credits: u.credits || 0,
+        totalAnalyses: statsMap.get(u.id)?.count || 0,
+        lastAnalysis: statsMap.get(u.id)?.lastAnalysis || null,
+        createdAt: u.createdAt
+      }));
+      
+      // Summary stats - calculated from already-fetched users
+      const totalCredits = users.reduce((sum, u) => sum + (u.credits || 0), 0);
+      const totalAnalyses = userAnalysisStats.reduce((sum, s) => sum + s.count, 0);
+      
+      // Get recent analyses count from storage
+      const recentAnalyses = await storage.getRecentAnalysesCount(7);
+      
+      // Get analyses by day for chart
+      const analysesByDay = await storage.getAnalysesByDay(30);
+      
+      res.json({
+        users: userCredits,
+        summary: {
+          totalCredits,
+          totalAnalyses,
+          recentAnalyses,
+          usersWithCredits: users.filter(u => (u.credits || 0) > 0).length,
+          totalUsers: users.length
+        },
+        analysesByDay
+      });
+    } catch (error) {
+      console.error("Error fetching credit reports:", error);
+      res.status(500).json({ error: 'Failed to fetch credit reports' });
+    }
+  });
+
   // Credit packages routes
   app.get('/api/credit-packages', async (req, res) => {
     try {
