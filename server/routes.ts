@@ -342,6 +342,34 @@ export async function registerRoutes(
     }
   });
 
+  // Deterministic analysis from OHLCV price series
+  app.post('/api/analyze/prices', async (req: any, res) => {
+    try {
+      const userId = getUserId(req);
+      const { symbol, timeframe, ohlcv } = req.body;
+
+      if (!ohlcv || !Array.isArray(ohlcv) || ohlcv.length < 10) {
+        return res.status(400).json({ error: 'Provide an array of OHLCV objects with at least 10 entries' });
+      }
+
+      const analysisModule = await import('./analysis');
+      const result = analysisModule.analyzePriceSeries(ohlcv, symbol || 'Unknown', timeframe || 'Unknown');
+
+      // Save to storage for user
+      const analysis = await storage.createAnalysis({
+        userId,
+        imageUrl: null,
+        result
+      });
+
+      await logInfo('ai', `Price-series analysis completed: ${result.trend} trend with ${result.confidence}% confidence`, { analysisId: analysis.id }, userId);
+      res.json(analysis);
+    } catch (error: any) {
+      console.error('Price analysis error:', error);
+      res.status(500).json({ error: error.message || 'Failed to analyze price series' });
+    }
+  });
+
   app.get('/api/analyses', async (req: any, res) => {
     try {
       const userId = getUserId(req);
