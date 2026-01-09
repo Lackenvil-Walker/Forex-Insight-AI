@@ -36,8 +36,8 @@ const AIRTEL_MONEY_NUMBER = "0978264084";
 
 const tierIcons: Record<string, React.ReactNode> = {
   Starter: <Zap className="h-8 w-8 text-blue-500" />,
-  Pro: <Sparkles className="h-8 w-8 text-purple-500" />,
-  Enterprise: <Crown className="h-8 w-8 text-yellow-500" />,
+  "Pro Trader": <Sparkles className="h-8 w-8 text-purple-500" />,
+  Institution: <Crown className="h-8 w-8 text-yellow-500" />,
 };
 
 export default function Pricing() {
@@ -212,8 +212,7 @@ export default function Pricing() {
   };
 
   const formatPriceUSD = (priceInCents: number) => {
-    const zarAmount = priceInCents / 100;
-    const usdAmount = zarAmount / 18;
+    const usdAmount = priceInCents / 100;
     return new Intl.NumberFormat("en-US", {
       style: "currency",
       currency: "USD",
@@ -224,11 +223,11 @@ export default function Pricing() {
   const pendingPayments = myPayments?.filter(p => p.status === 'pending') || [];
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950">
+    <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8">
         <Button
           variant="ghost"
-          className="text-slate-400 hover:text-white mb-8"
+          className="text-muted-foreground hover:text-foreground mb-8"
           onClick={() => setLocation("/")}
           data-testid="button-back"
         >
@@ -241,14 +240,14 @@ export default function Pricing() {
           animate={{ opacity: 1, y: 0 }}
           className="text-center mb-12"
         >
-          <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
+          <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
             Buy Credits
           </h1>
-          <p className="text-lg text-slate-400 max-w-2xl mx-auto">
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
             Purchase analysis credits to unlock AI-powered forex chart analysis
           </p>
           {user && !user.isGuest && (
-            <p className="text-sm text-purple-400 mt-4" data-testid="text-current-credits">
+            <p className="text-sm text-primary mt-4" data-testid="text-current-credits">
               Current balance: {user.credits || 0} credits
             </p>
           )}
@@ -297,7 +296,8 @@ export default function Pricing() {
         ) : (
           <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
             {packages.map((pkg, index) => {
-              const isPopular = pkg.name === "Pro";
+              const isPopular = pkg.name === "Pro Trader";
+              const isInstitution = pkg.name === "Institution";
 
               return (
                 <motion.div
@@ -307,14 +307,14 @@ export default function Pricing() {
                   transition={{ delay: index * 0.1 }}
                 >
                   <Card
-                    className={`relative h-full bg-slate-900/50 border-slate-800 ${
-                      isPopular ? "border-purple-500 shadow-lg shadow-purple-500/20" : ""
+                    className={`relative h-full bg-card/50 border-border ${
+                      isPopular ? "border-primary shadow-lg shadow-primary/20" : ""
                     }`}
                     data-testid={`card-package-${pkg.id}`}
                   >
                     {isPopular && (
                       <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-                        <span className="bg-purple-500 text-white text-sm font-medium px-4 py-1 rounded-full">
+                        <span className="bg-primary text-primary-foreground text-sm font-medium px-4 py-1 rounded-full">
                           Best Value
                         </span>
                       </div>
@@ -323,78 +323,126 @@ export default function Pricing() {
                       <div className="flex justify-center mb-4">
                         {tierIcons[pkg.name] || <Zap className="h-8 w-8 text-blue-500" />}
                       </div>
-                      <CardTitle className="text-2xl text-white">
+                      <CardTitle className="text-2xl text-foreground">
                         {pkg.name}
                       </CardTitle>
-                      <CardDescription className="text-slate-400">
-                        {pkg.description}
+                      <CardDescription className="text-muted-foreground">
+                        {isInstitution ? "Custom pricing for institutions" : pkg.description}
                       </CardDescription>
                     </CardHeader>
                     <CardContent className="text-center">
                       <div className="mb-6">
-                        <span className="text-4xl font-bold text-white" data-testid={`text-price-${pkg.id}`}>
-                          {formatPriceZAR(pkg.priceZar)}
-                        </span>
-                        <p className="text-sm text-slate-500 mt-1">
-                          {formatPriceUSD(pkg.priceZar)} USD
-                        </p>
+                        {isInstitution ? (
+                          <span className="text-4xl font-bold text-foreground" data-testid={`text-price-${pkg.id}`}>
+                            Custom
+                          </span>
+                        ) : (
+                          <>
+                            <span className="text-4xl font-bold text-foreground" data-testid={`text-price-${pkg.id}`}>
+                              {formatPriceUSD(pkg.priceZar)}
+                            </span>
+                          </>
+                        )}
                       </div>
                       <ul className="space-y-3 text-left">
-                        <li className="flex items-center gap-3">
-                          <Check className="h-5 w-5 text-green-500 flex-shrink-0" />
-                          <span className="text-slate-300 text-sm">
-                            {pkg.credits} chart analyses
-                          </span>
-                        </li>
-                        <li className="flex items-center gap-3">
-                          <Check className="h-5 w-5 text-green-500 flex-shrink-0" />
-                          <span className="text-slate-300 text-sm">
-                            Entry, exit & stop-loss levels
-                          </span>
-                        </li>
-                        <li className="flex items-center gap-3">
-                          <Check className="h-5 w-5 text-green-500 flex-shrink-0" />
-                          <span className="text-slate-300 text-sm">
-                            Detailed trading insights
-                          </span>
-                        </li>
-                        <li className="flex items-center gap-3">
-                          <Check className="h-5 w-5 text-green-500 flex-shrink-0" />
-                          <span className="text-slate-300 text-sm">
-                            Never expires
-                          </span>
-                        </li>
+                        {isInstitution ? (
+                          <>
+                            <li className="flex items-center gap-3">
+                              <Check className="h-5 w-5 text-green-500 flex-shrink-0" />
+                              <span className="text-foreground/80 text-sm">
+                                Unlimited chart analyses
+                              </span>
+                            </li>
+                            <li className="flex items-center gap-3">
+                              <Check className="h-5 w-5 text-green-500 flex-shrink-0" />
+                              <span className="text-foreground/80 text-sm">
+                                Priority support
+                              </span>
+                            </li>
+                            <li className="flex items-center gap-3">
+                              <Check className="h-5 w-5 text-green-500 flex-shrink-0" />
+                              <span className="text-foreground/80 text-sm">
+                                Custom integrations
+                              </span>
+                            </li>
+                            <li className="flex items-center gap-3">
+                              <Check className="h-5 w-5 text-green-500 flex-shrink-0" />
+                              <span className="text-foreground/80 text-sm">
+                                Dedicated account manager
+                              </span>
+                            </li>
+                          </>
+                        ) : (
+                          <>
+                            <li className="flex items-center gap-3">
+                              <Check className="h-5 w-5 text-green-500 flex-shrink-0" />
+                              <span className="text-foreground/80 text-sm">
+                                {pkg.credits} chart analyses
+                              </span>
+                            </li>
+                            <li className="flex items-center gap-3">
+                              <Check className="h-5 w-5 text-green-500 flex-shrink-0" />
+                              <span className="text-foreground/80 text-sm">
+                                Entry, exit & stop-loss levels
+                              </span>
+                            </li>
+                            <li className="flex items-center gap-3">
+                              <Check className="h-5 w-5 text-green-500 flex-shrink-0" />
+                              <span className="text-foreground/80 text-sm">
+                                Detailed trading insights
+                              </span>
+                            </li>
+                            <li className="flex items-center gap-3">
+                              <Check className="h-5 w-5 text-green-500 flex-shrink-0" />
+                              <span className="text-foreground/80 text-sm">
+                                Never expires
+                              </span>
+                            </li>
+                          </>
+                        )}
                       </ul>
                     </CardContent>
                     <CardFooter className="flex flex-col gap-2">
-                      <Button
-                        className={`w-full ${
-                          isPopular
-                            ? "bg-purple-600 hover:bg-purple-700"
-                            : "bg-slate-700 hover:bg-slate-600"
-                        }`}
-                        onClick={() => handlePurchase(pkg.id)}
-                        disabled={initializeMutation.isPending || verifyMutation.isPending}
-                        data-testid={`button-buy-${pkg.id}`}
-                      >
-                        {initializeMutation.isPending || verifyMutation.isPending ? (
-                          <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Processing...
-                          </>
-                        ) : (
-                          `Pay with Card`
-                        )}
-                      </Button>
-                      <Button
-                        variant="outline"
-                        className="w-full border-red-500/50 text-red-400 hover:bg-red-500/10 hover:text-red-300"
-                        onClick={() => handleMobilePayment(pkg)}
-                        data-testid={`button-mobile-${pkg.id}`}
-                      >
-                        <Smartphone className="mr-2 h-4 w-4" />
-                        Pay with Airtel Money
-                      </Button>
+                      {isInstitution ? (
+                        <Button
+                          className="w-full bg-yellow-600 hover:bg-yellow-700 text-white"
+                          onClick={() => window.location.href = "mailto:admin@silverock.co.za"}
+                          data-testid={`button-contact-${pkg.id}`}
+                        >
+                          Contact Us
+                        </Button>
+                      ) : (
+                        <>
+                          <Button
+                            className={`w-full ${
+                              isPopular
+                                ? ""
+                                : "bg-muted hover:bg-muted/80 text-foreground"
+                            }`}
+                            onClick={() => handlePurchase(pkg.id)}
+                            disabled={initializeMutation.isPending || verifyMutation.isPending}
+                            data-testid={`button-buy-${pkg.id}`}
+                          >
+                            {initializeMutation.isPending || verifyMutation.isPending ? (
+                              <>
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                Processing...
+                              </>
+                            ) : (
+                              `Pay with Card`
+                            )}
+                          </Button>
+                          <Button
+                            variant="outline"
+                            className="w-full border-red-500/50 text-red-400 hover:bg-red-500/10 hover:text-red-300"
+                            onClick={() => handleMobilePayment(pkg)}
+                            data-testid={`button-mobile-${pkg.id}`}
+                          >
+                            <Smartphone className="mr-2 h-4 w-4" />
+                            Pay with Airtel Money
+                          </Button>
+                        </>
+                      )}
                     </CardFooter>
                   </Card>
                 </motion.div>
@@ -407,12 +455,12 @@ export default function Pricing() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.5 }}
-          className="text-center mt-16 text-slate-400 text-sm"
+          className="text-center mt-16 text-muted-foreground text-sm"
         >
           <p>Secure payments powered by Paystack & Airtel Money</p>
           <p className="mt-2">
             Questions?{" "}
-            <a href="mailto:support@forexedge.co.za" className="text-purple-400 hover:underline">
+            <a href="mailto:support@forexedge.co.za" className="text-primary hover:underline">
               Contact us
             </a>
           </p>
@@ -420,7 +468,7 @@ export default function Pricing() {
       </div>
 
       <Dialog open={mobilePaymentDialog} onOpenChange={setMobilePaymentDialog}>
-        <DialogContent className="bg-slate-900 border-slate-700 text-white max-w-md">
+        <DialogContent className="bg-card border-border text-foreground max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Smartphone className="h-5 w-5 text-red-500" />
@@ -433,18 +481,18 @@ export default function Pricing() {
 
           {selectedPackage && (
             <div className="space-y-6">
-              <div className="bg-slate-800 rounded-lg p-4">
+              <div className="bg-muted rounded-lg p-4">
                 <div className="flex justify-between items-center mb-2">
-                  <span className="text-slate-400">Package:</span>
+                  <span className="text-muted-foreground">Package:</span>
                   <span className="font-medium">{selectedPackage.name}</span>
                 </div>
                 <div className="flex justify-between items-center mb-2">
-                  <span className="text-slate-400">Credits:</span>
+                  <span className="text-muted-foreground">Credits:</span>
                   <span className="font-medium">{selectedPackage.credits}</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-slate-400">Amount:</span>
-                  <span className="text-xl font-bold text-green-400">{formatPriceZAR(selectedPackage.priceZar)}</span>
+                  <span className="text-muted-foreground">Amount:</span>
+                  <span className="text-xl font-bold text-primary">{formatPriceZAR(selectedPackage.priceZar)}</span>
                 </div>
               </div>
 
@@ -453,27 +501,27 @@ export default function Pricing() {
                 <p className="text-sm text-slate-300 mb-2">
                   Send <span className="font-bold text-white">{formatPriceZAR(selectedPackage.priceZar)}</span> to:
                 </p>
-                <div className="bg-slate-800 rounded p-3 text-center">
-                  <p className="text-2xl font-mono font-bold text-white">{AIRTEL_MONEY_NUMBER}</p>
-                  <p className="text-xs text-slate-400 mt-1">Airtel Money</p>
+                <div className="bg-muted rounded p-3 text-center">
+                  <p className="text-2xl font-mono font-bold text-foreground">{AIRTEL_MONEY_NUMBER}</p>
+                  <p className="text-xs text-muted-foreground mt-1">Airtel Money</p>
                 </div>
               </div>
 
               <div className="space-y-4">
                 <div>
-                  <Label htmlFor="phone" className="text-slate-300">Your Phone Number</Label>
+                  <Label htmlFor="phone" className="text-foreground">Your Phone Number</Label>
                   <Input
                     id="phone"
                     placeholder="e.g. 0978123456"
                     value={phoneNumber}
                     onChange={(e) => setPhoneNumber(e.target.value)}
-                    className="bg-slate-800 border-slate-600 text-white mt-1"
+                    className="bg-muted border-border text-foreground mt-1"
                     data-testid="input-phone"
                   />
                 </div>
 
                 <div>
-                  <Label className="text-slate-300">Payment Screenshot (Optional)</Label>
+                  <Label className="text-foreground">Payment Screenshot (Optional)</Label>
                   <div className="mt-1">
                     {screenshotBase64 ? (
                       <div className="relative">
@@ -521,7 +569,7 @@ export default function Pricing() {
             <Button
               variant="outline"
               onClick={() => setMobilePaymentDialog(false)}
-              className="border-slate-600"
+              className="border-border"
             >
               Cancel
             </Button>

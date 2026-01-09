@@ -1,0 +1,201 @@
+
+      
+    at async /app/dist/index.cjs:76:101133
+
+    at async nv.getUser (/app/dist/index.cjs:76:104121)
+
+    at async r (/app/dist/index.cjs:175:1209)
+
+    at async /app/dist/index.cjs:175:5511 {
+
+  length: 105,
+
+  severity: 'ERROR',
+
+  code: '42P01',
+
+  detail: undefined,
+
+  hint: undefined,
+
+  position: '275',
+
+  internalPosition: undefined,
+
+  internalQuery: undefined,
+
+  where: undefined,
+
+  schema: undefined,
+
+  table: undefined,
+
+  column: undefined,
+
+  dataType: undefined,
+
+  constraint: undefined,
+
+  file: 'parse_relation.c',
+
+  line: '1392',
+
+  routine: 'parserOpenTable'
+
+}
+
+6:51:49 PM [express] GET /api/auth/user 500 in 87ms :: {"message":"Failed to fetch user"}
+
+Login error: error: relation "users" does not exist
+
+    at /app/dist/index.cjs:64:13326
+
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+
+    at async /app/dist/index.cjs:76:101133
+
+    at async nv.getUserByEmail (/app/dist/index.cjs:76:104214)
+
+    at async /app/dist/index.cjs:175:2565 {
+
+  length: 105,
+
+  severity: 'ERROR',
+
+  code: '42P01',
+
+  detail: undefined,
+
+  hint: undefined,
+
+  position: '275',
+
+  internalPosition: undefined,
+
+  internalQuery: undefined,
+
+  where: undefined,
+
+  schema: undefined,
+
+  table: undefined,
+
+  column: undefined,
+
+  dataType: undefined,
+
+  constraint: undefined,
+
+  file: 'parse_relation.c',
+
+  line: '1392',
+
+  routine: 'parserOpenTable'
+
+}
+
+Failed to write log: error: relation "service_logs" does not exist
+
+    at /app/dist/index.cjs:64:13326
+
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+
+    at async /app/dist/index.cjs:76:101133
+
+    at async nv.createLog (/app/dist/index.cjs:76:107848)
+
+    at async sC (/app/dist/index.cjs:175:180)
+
+    at async dr (/app/dist/index.cjs:175:465)
+
+    at async /app/dist/index.cjs:175:3366 {
+
+  length: 111,
+
+  severity: 'ERROR',
+
+  code: '42P01',
+
+  detail: undefined,
+
+  hint: undefined,
+
+  position: '13',
+
+  internalPosition: undefined,
+
+  internalQuery: undefined,
+
+  where: undefined,
+
+  schema: undefined,
+
+  table: undefined,
+
+  column: undefined,
+
+  dataType: undefined,
+
+  constraint: undefined,
+
+  file: 'parse_relation.c',
+
+  line: '1392',
+
+  routine: 'parserOpenTable'
+
+}
+
+6:51:54 PM [express] POST /api/auth/login 500 in 121ms :: {"error":"Failed to log in"}
+
+Error fetching user: error: relation "users" does not exist
+
+    at /app/dist/index.cjs:64:13326
+
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+
+    at async /app/dist/index.cjs:76:101133
+
+    at async nv.getUser (/app/dist/index.cjs:76:104121)
+
+    at async r (/app/dist/index.cjs:175:1209)
+
+    at async /app/dist/index.cjs:175:5511 {
+
+  length: 105,
+
+  severity: 'ERROR',
+
+  code: '42P01',
+
+  detail: undefined,
+
+  hint: undefined,
+
+  position: '275',
+
+  internalPosition: undefined,
+
+  internalQuery: undefined,
+
+  where: undefined,
+
+  schema: undefined,
+
+  table: undefined,
+
+  column: undefined,
+
+  dataType: undefined,
+
+  constraint: undefined,
+
+  file: 'parse_relation.c',
+
+  line: '1392',
+
+  routine: 'parserOpenTable'
+
+}
+
+7:02:45 PM [express] GET /api/auth/user 500 in 57ms :: {"message":"Failed to fetch user"}

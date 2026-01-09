@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Switch, Route } from 'wouter';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ChartUploader } from '@/components/ChartUploader';
 import { AnalysisResult } from '@/components/AnalysisResult';
 import { Layout } from '@/components/Layout';
@@ -18,6 +18,7 @@ import { formatDistanceToNow } from 'date-fns';
 
 function DashboardHome() {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [analysisData, setAnalysisData] = useState<any>(null);
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
 
@@ -55,6 +56,7 @@ function DashboardHome() {
     },
     onSuccess: (data) => {
       setAnalysisData(data.result);
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
       toast.success("Analysis Complete", {
         description: "Your chart has been analyzed successfully.",
       });

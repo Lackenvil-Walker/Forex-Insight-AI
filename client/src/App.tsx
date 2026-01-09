@@ -13,6 +13,7 @@ import Login from "@/pages/Login";
 import Signup from "@/pages/Signup";
 import VerifyEmail from "@/pages/VerifyEmail";
 import Settings from "@/pages/Settings";
+import WhatsAppButton from "@/components/WhatsAppButton";
 
 function Router() {
   return (
@@ -39,6 +40,7 @@ function App() {
         <Toaster />
         <SonnerToaster position="top-right" richColors />
         <Router />
+        <WhatsAppButton />
       </TooltipProvider>
     </QueryClientProvider>
   );

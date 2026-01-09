@@ -13,6 +13,7 @@ async function getResendClient() {
 
 export async function sendVerificationEmail(to: string, token: string): Promise<boolean> {
   try {
+    console.log(`[Email] Attempting to send verification email to: ${to}`);
     const client = await getResendClient();
     
     const baseUrl = process.env.REPLIT_DEV_DOMAIN 
@@ -20,8 +21,9 @@ export async function sendVerificationEmail(to: string, token: string): Promise<
       : process.env.REPLIT_DEPLOYMENT_URL || 'http://localhost:5000';
     
     const verifyUrl = `${baseUrl}/verify-email?token=${token}`;
+    console.log(`[Email] Verify URL: ${verifyUrl}`);
     
-    const { error } = await client.emails.send({
+    const { data, error } = await client.emails.send({
       from: 'Forex Edge <noreply@silverock.co.za>',
       to: [to],
       subject: 'Verify your Forex Edge account',
@@ -69,10 +71,11 @@ export async function sendVerificationEmail(to: string, token: string): Promise<
     });
 
     if (error) {
-      console.error('Failed to send verification email:', error);
+      console.error('[Email] Failed to send verification email:', error);
       return false;
     }
     
+    console.log(`[Email] Successfully sent verification email to ${to}. ID: ${data?.id}`);
     return true;
   } catch (error) {
     console.error('Error sending verification email:', error);

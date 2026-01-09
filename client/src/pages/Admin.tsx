@@ -2100,6 +2100,355 @@ function AdminLogs() {
   );
 }
 
+interface CreditReportUser {
+  id: string;
+  email: string;
+  firstName: string | null;
+  lastName: string | null;
+  credits: number;
+  totalAnalyses: number;
+  lastAnalysis: string | null;
+  createdAt: string;
+}
+
+interface CreditReport {
+  users: CreditReportUser[];
+  summary: {
+    totalCredits: number;
+    totalAnalyses: number;
+    recentAnalyses: number;
+    usersWithCredits: number;
+    totalUsers: number;
+  };
+  analysesByDay: Record<string, number>;
+}
+
+function AdminCredits() {
+  const [selectedUser, setSelectedUser] = useState<CreditReportUser | null>(null);
+  const [creditsAmount, setCreditsAmount] = useState<string>('10');
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [creditsAction, setCreditsAction] = useState<'add' | 'remove' | 'set'>('add');
+  const [sortBy, setSortBy] = useState<'credits' | 'analyses' | 'email'>('credits');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+
+  const { data: report, isLoading, refetch } = useQuery<CreditReport>({
+    queryKey: ['admin-credit-reports'],
+    queryFn: async () => {
+      const response = await fetch('/api/admin/credit-reports', { credentials: 'include' });
+      if (!response.ok) throw new Error('Failed to fetch credit reports');
+      return response.json();
+    },
+  });
+
+  const creditsMutation = useMutation({
+    mutationFn: async ({ userId, amount, action }: { userId: string; amount: number; action: 'add' | 'remove' | 'set' }) => {
+      if (action === 'set') {
+        const response = await fetch(`/api/admin/users/${userId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ credits: amount }),
+          credentials: 'include'
+        });
+        if (!response.ok) throw new Error('Failed to update credits');
+        return response.json();
+      } else {
+        const response = await fetch(`/api/admin/users/${userId}/credits`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ amount, action }),
+          credentials: 'include'
+        });
+        if (!response.ok) throw new Error('Failed to update credits');
+        return response.json();
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-credit-reports'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-users'] });
+      setDialogOpen(false);
+      setSelectedUser(null);
+      setCreditsAmount('10');
+      toast.success("Credits Updated", {
+        description: `Successfully ${creditsAction === 'add' ? 'added' : creditsAction === 'remove' ? 'removed' : 'set'} credits.`
+      });
+    },
+    onError: (error: Error) => {
+      toast.error("Failed to Update Credits", { description: error.message });
+    }
+  });
+
+  const handleCreditsSubmit = () => {
+    if (!selectedUser) return;
+    const amount = parseInt(creditsAmount) || 0;
+    if (amount < 0 || (creditsAction !== 'set' && amount <= 0)) {
+      toast.error("Invalid Amount", { description: "Please enter a valid number." });
+      return;
+    }
+    creditsMutation.mutate({ userId: selectedUser.id, amount, action: creditsAction });
+  };
+
+  const openCreditsDialog = (user: CreditReportUser, action: 'add' | 'remove' | 'set') => {
+    setSelectedUser(user);
+    setCreditsAction(action);
+    setCreditsAmount(action === 'set' ? String(user.credits) : '10');
+    setDialogOpen(true);
+  };
+
+  const sortedUsers = React.useMemo(() => {
+    if (!report?.users) return [];
+    return [...report.users].sort((a, b) => {
+      let aVal: any, bVal: any;
+      if (sortBy === 'credits') {
+        aVal = a.credits;
+        bVal = b.credits;
+      } else if (sortBy === 'analyses') {
+        aVal = a.totalAnalyses;
+        bVal = b.totalAnalyses;
+      } else {
+        aVal = a.email.toLowerCase();
+        bVal = b.email.toLowerCase();
+      }
+      if (sortOrder === 'asc') return aVal < bVal ? -1 : 1;
+      return aVal > bVal ? -1 : 1;
+    });
+  }, [report?.users, sortBy, sortOrder]);
+
+  const toggleSort = (column: 'credits' | 'analyses' | 'email') => {
+    if (sortBy === column) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortBy(column);
+      setSortOrder('desc');
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold" data-testid="text-credits-title">Credit Management</h1>
+        <p className="text-muted-foreground">View and manage user credits and usage reports.</p>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Credits</CardTitle>
+            <Coins className="h-4 w-4 text-primary" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold" data-testid="text-report-total-credits">{report?.summary.totalCredits || 0}</div>
+            <p className="text-xs text-muted-foreground">Across all users</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Users with Credits</CardTitle>
+            <Users className="h-4 w-4 text-green-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-500" data-testid="text-users-with-credits">{report?.summary.usersWithCredits || 0}</div>
+            <p className="text-xs text-muted-foreground">of {report?.summary.totalUsers || 0} total</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Analyses</CardTitle>
+            <TrendingUp className="h-4 w-4 text-blue-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-blue-500" data-testid="text-total-analyses">{report?.summary.totalAnalyses || 0}</div>
+            <p className="text-xs text-muted-foreground">All time</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Recent Analyses</CardTitle>
+            <Activity className="h-4 w-4 text-orange-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-orange-500" data-testid="text-recent-analyses">{report?.summary.recentAnalyses || 0}</div>
+            <p className="text-xs text-muted-foreground">Last 7 days</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Avg Credits/User</CardTitle>
+            <DollarSign className="h-4 w-4 text-purple-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-purple-500" data-testid="text-avg-credits">
+              {report?.summary.totalUsers ? Math.round(report.summary.totalCredits / report.summary.totalUsers) : 0}
+            </div>
+            <p className="text-xs text-muted-foreground">Average balance</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>User Credits</CardTitle>
+              <CardDescription>Click on column headers to sort. Click actions to modify credits.</CardDescription>
+            </div>
+            <Button variant="outline" size="sm" onClick={() => refetch()} data-testid="button-refresh-credits">
+              <Loader2 className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+              Refresh
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead 
+                    className="cursor-pointer hover:bg-muted/50"
+                    onClick={() => toggleSort('email')}
+                    data-testid="header-email"
+                  >
+                    User {sortBy === 'email' && (sortOrder === 'asc' ? '↑' : '↓')}
+                  </TableHead>
+                  <TableHead 
+                    className="cursor-pointer hover:bg-muted/50 text-right"
+                    onClick={() => toggleSort('credits')}
+                    data-testid="header-credits"
+                  >
+                    Credits {sortBy === 'credits' && (sortOrder === 'asc' ? '↑' : '↓')}
+                  </TableHead>
+                  <TableHead 
+                    className="cursor-pointer hover:bg-muted/50 text-right"
+                    onClick={() => toggleSort('analyses')}
+                    data-testid="header-analyses"
+                  >
+                    Analyses {sortBy === 'analyses' && (sortOrder === 'asc' ? '↑' : '↓')}
+                  </TableHead>
+                  <TableHead>Last Analysis</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {sortedUsers.map((user) => (
+                  <TableRow key={user.id} data-testid={`row-user-${user.id}`}>
+                    <TableCell>
+                      <div>
+                        <div className="font-medium">{user.firstName || user.email.split('@')[0]}</div>
+                        <div className="text-xs text-muted-foreground">{user.email}</div>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Badge 
+                        variant={user.credits > 0 ? "default" : "secondary"}
+                        className={user.credits > 50 ? "bg-green-500/20 text-green-500 border-green-500/20" : ""}
+                      >
+                        {user.credits}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">{user.totalAnalyses}</TableCell>
+                    <TableCell>
+                      {user.lastAnalysis 
+                        ? formatDistanceToNow(new Date(user.lastAnalysis), { addSuffix: true })
+                        : <span className="text-muted-foreground">Never</span>
+                      }
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-1">
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => openCreditsDialog(user, 'add')}
+                          data-testid={`button-add-credits-${user.id}`}
+                        >
+                          <Plus className="w-4 h-4 text-green-500" />
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => openCreditsDialog(user, 'remove')}
+                          data-testid={`button-remove-credits-${user.id}`}
+                        >
+                          <Minus className="w-4 h-4 text-red-500" />
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => openCreditsDialog(user, 'set')}
+                          data-testid={`button-set-credits-${user.id}`}
+                        >
+                          <Pencil className="w-4 h-4 text-blue-500" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {creditsAction === 'add' ? 'Add Credits' : creditsAction === 'remove' ? 'Remove Credits' : 'Set Credits'}
+            </DialogTitle>
+            <DialogDescription>
+              {creditsAction === 'set' 
+                ? `Set the exact credit balance for ${selectedUser?.firstName || selectedUser?.email}`
+                : `${creditsAction === 'add' ? 'Add' : 'Remove'} credits ${creditsAction === 'add' ? 'to' : 'from'} ${selectedUser?.firstName || selectedUser?.email}'s account`
+              }
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Current Balance</Label>
+              <div className="text-2xl font-bold">{selectedUser?.credits || 0} credits</div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="credits-amount">
+                {creditsAction === 'set' ? 'New Balance' : 'Amount'}
+              </Label>
+              <Input
+                id="credits-amount"
+                type="number"
+                min="0"
+                value={creditsAmount}
+                onChange={(e) => setCreditsAmount(e.target.value)}
+                data-testid="input-credits-amount"
+              />
+            </div>
+            {creditsAction !== 'set' && (
+              <div className="text-sm text-muted-foreground">
+                New balance will be: {Math.max(0, (selectedUser?.credits || 0) + (creditsAction === 'add' ? 1 : -1) * (parseInt(creditsAmount) || 0))} credits
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
+            <Button 
+              onClick={handleCreditsSubmit}
+              disabled={creditsMutation.isPending}
+              data-testid="button-confirm-credits"
+            >
+              {creditsMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+              {creditsAction === 'set' ? 'Set Credits' : creditsAction === 'add' ? 'Add Credits' : 'Remove Credits'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
 export default function Admin() {
   const { isAdmin, isLoading, isGuest } = useAuth();
   const [, navigate] = useLocation();
@@ -2137,6 +2486,7 @@ export default function Admin() {
         <Route path="/admin/settings" component={AdminSettings} />
         <Route path="/admin/logs" component={AdminLogs} />
         <Route path="/admin/users" component={AdminUsers} />
+        <Route path="/admin/credits" component={AdminCredits} />
         <Route path="/admin/payments" component={AdminPayments} />
       </Switch>
     </Layout>

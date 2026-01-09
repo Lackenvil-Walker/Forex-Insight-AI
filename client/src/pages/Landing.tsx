@@ -58,7 +58,7 @@ export default function Landing() {
             </div>
             <h1 className="text-4xl md:text-7xl font-bold tracking-tighter mb-6 max-w-4xl mx-auto leading-tight">
               Trade Smarter with <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-emerald-300 text-glow">Institutional Intelligence</span>
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-gray-300 via-white to-primary text-glow">Institutional Intelligence</span>
             </h1>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed">
               Upload your chart. Our AI analyzes market structure, price action, and indicators to give you institutional-grade trading setups in seconds.
@@ -117,18 +117,19 @@ export default function Landing() {
           </div>
 
           <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-            {/* Free Plan */}
+            {/* Starter Plan */}
             <Card className="relative overflow-hidden border-white/10">
               <CardHeader>
                 <CardTitle className="text-2xl">Starter</CardTitle>
-                <div className="text-4xl font-bold mt-2">$0<span className="text-lg font-normal text-muted-foreground">/mo</span></div>
-                <CardDescription>For beginners learning the ropes.</CardDescription>
+                <div className="text-4xl font-bold mt-2">$5</div>
+                <CardDescription>60 chart analyses for beginners.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <ul className="space-y-3 text-sm">
-                  <li className="flex items-center gap-2"><Check className="w-4 h-4 text-primary" /> 1 analysis per day</li>
-                  <li className="flex items-center gap-2"><Check className="w-4 h-4 text-primary" /> Basic pattern recognition</li>
-                  <li className="flex items-center gap-2"><Check className="w-4 h-4 text-primary" /> Standard support</li>
+                  <li className="flex items-center gap-2"><Check className="w-4 h-4 text-primary" /> 60 chart analyses</li>
+                  <li className="flex items-center gap-2"><Check className="w-4 h-4 text-primary" /> Entry, exit & stop-loss levels</li>
+                  <li className="flex items-center gap-2"><Check className="w-4 h-4 text-primary" /> Detailed trading insights</li>
+                  <li className="flex items-center gap-2"><Check className="w-4 h-4 text-primary" /> Never expires</li>
                 </ul>
               </CardContent>
               <CardFooter>
@@ -138,47 +139,48 @@ export default function Landing() {
               </CardFooter>
             </Card>
 
-            {/* Pro Plan */}
-            <Card className="relative overflow-hidden border-primary shadow-[0_0_40px_rgba(0,227,150,0.1)]">
-              <div className="absolute top-0 right-0 bg-primary text-black text-xs font-bold px-3 py-1 rounded-bl-lg">POPULAR</div>
+            {/* Pro Trader Plan */}
+            <Card className="relative overflow-hidden border-primary shadow-[0_0_40px_rgba(34,197,94,0.15)]">
+              <div className="absolute top-0 right-0 bg-primary text-black text-xs font-bold px-3 py-1 rounded-bl-lg">BEST VALUE</div>
               <CardHeader>
                 <CardTitle className="text-2xl">Pro Trader</CardTitle>
-                <div className="text-4xl font-bold mt-2 text-primary">$29<span className="text-lg font-normal text-muted-foreground text-white">/mo</span></div>
-                <CardDescription>For serious traders needing an edge.</CardDescription>
+                <div className="text-4xl font-bold mt-2 text-primary">$10</div>
+                <CardDescription>130 chart analyses for serious traders.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <ul className="space-y-3 text-sm">
-                  <li className="flex items-center gap-2"><Check className="w-4 h-4 text-primary" /> Unlimited analysis</li>
-                  <li className="flex items-center gap-2"><Check className="w-4 h-4 text-primary" /> Advanced entry/exit signals</li>
-                  <li className="flex items-center gap-2"><Check className="w-4 h-4 text-primary" /> Multi-timeframe analysis</li>
-                  <li className="flex items-center gap-2"><Check className="w-4 h-4 text-primary" /> Priority processing</li>
+                  <li className="flex items-center gap-2"><Check className="w-4 h-4 text-primary" /> 130 chart analyses</li>
+                  <li className="flex items-center gap-2"><Check className="w-4 h-4 text-primary" /> Entry, exit & stop-loss levels</li>
+                  <li className="flex items-center gap-2"><Check className="w-4 h-4 text-primary" /> Detailed trading insights</li>
+                  <li className="flex items-center gap-2"><Check className="w-4 h-4 text-primary" /> Never expires</li>
                 </ul>
               </CardContent>
               <CardFooter>
                 <Link href="/pricing" className="w-full">
-                  <Button className="w-full h-12 text-md" data-testid="button-pro-trial">Start Pro Trial</Button>
+                  <Button className="w-full h-12 text-md" data-testid="button-pro-trial">Buy Pro Trader</Button>
                 </Link>
               </CardFooter>
             </Card>
 
-            {/* Institutional Plan */}
+            {/* Institution Plan */}
             <Card className="relative overflow-hidden border-white/10">
               <CardHeader>
-                <CardTitle className="text-2xl">Institutional</CardTitle>
-                <div className="text-4xl font-bold mt-2">$99<span className="text-lg font-normal text-muted-foreground">/mo</span></div>
+                <CardTitle className="text-2xl">Institution</CardTitle>
+                <div className="text-4xl font-bold mt-2">Custom</div>
                 <CardDescription>For funds and prop firms.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <ul className="space-y-3 text-sm">
-                  <li className="flex items-center gap-2"><Check className="w-4 h-4 text-primary" /> API Access</li>
-                  <li className="flex items-center gap-2"><Check className="w-4 h-4 text-primary" /> Custom AI model training</li>
+                  <li className="flex items-center gap-2"><Check className="w-4 h-4 text-primary" /> Unlimited chart analyses</li>
+                  <li className="flex items-center gap-2"><Check className="w-4 h-4 text-primary" /> Priority support</li>
+                  <li className="flex items-center gap-2"><Check className="w-4 h-4 text-primary" /> Custom integrations</li>
                   <li className="flex items-center gap-2"><Check className="w-4 h-4 text-primary" /> Dedicated account manager</li>
                 </ul>
               </CardContent>
               <CardFooter>
-                <Link href="/pricing" className="w-full">
-                  <Button className="w-full" variant="outline" data-testid="button-institutional-plan">Contact Sales</Button>
-                </Link>
+                <a href="mailto:admin@silverock.co.za" className="w-full">
+                  <Button className="w-full" variant="outline" data-testid="button-institutional-plan">Contact Us</Button>
+                </a>
               </CardFooter>
             </Card>
           </div>

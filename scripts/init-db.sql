@@ -174,6 +174,21 @@ Remember: You MUST provide values for ALL fields including support, resistance, 
     1
 ) ON CONFLICT (id) DO NOTHING;
 
+-- Insert default admin user
+INSERT INTO users (id, email, password_hash, first_name, last_name, role, plan, status, credits, email_verified)
+VALUES (
+    'admin-default',
+    'emmanuel.m@alintatechsolutions.co.za',
+    '$2b$10$PZiq8yC/6W1IxsX1.zKT3emZh6/oO7IzIUnYzkB3cSxIwoFG7T4rq',
+    'Emmanuel',
+    'Admin',
+    'admin',
+    'enterprise',
+    'active',
+    1000,
+    true
+) ON CONFLICT (email) DO NOTHING;
+
 -- Insert default AI providers
 INSERT INTO ai_providers (name, api_key_env_var, base_url, models, is_active)
 VALUES 

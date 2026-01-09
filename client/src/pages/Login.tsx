@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, Mail, Lock, Eye, EyeOff } from 'lucide-react';
 import forexEdgeLogo from '@/assets/forex-edge-logo-full.png';
+import generatedImage from '@assets/generated_images/dark_abstract_digital_financial_data_visualization_background.png';
 
 export default function Login() {
   const [, navigate] = useLocation();
@@ -42,17 +43,26 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 px-4">
-      <div className="w-full max-w-md">
+    <div className="min-h-screen flex items-center justify-center bg-background px-4 relative overflow-hidden">
+      <div className="absolute inset-0 z-0">
+        <img 
+          src={generatedImage} 
+          alt="Background" 
+          className="w-full h-full object-cover opacity-40"
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-background via-background/80 to-background" />
+      </div>
+
+      <div className="w-full max-w-md relative z-10">
         <div className="text-center mb-8">
           <Link href="/" className="inline-block">
             <img src={forexEdgeLogo} alt="Forex Edge - Trade Smart" className="h-24 mx-auto object-contain" />
           </Link>
         </div>
 
-        <Card className="border-slate-700 bg-slate-800/50 backdrop-blur">
+        <Card className="border-border bg-card/80 backdrop-blur-md">
           <CardHeader>
-            <CardTitle className="text-white">Welcome back</CardTitle>
+            <CardTitle className="text-foreground">Welcome back</CardTitle>
             <CardDescription>Sign in to your account to continue</CardDescription>
           </CardHeader>
           <CardContent>
@@ -75,16 +85,16 @@ export default function Login() {
               )}
 
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-slate-200">Email</Label>
+                <Label htmlFor="email" className="text-foreground">Email</Label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-2.5 h-5 w-5 text-slate-400" />
+                  <Mail className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
                   <Input
                     id="email"
                     type="email"
                     placeholder="you@example.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="pl-10 bg-slate-700/50 border-slate-600 text-white placeholder:text-slate-400"
+                    className="pl-10 bg-muted/50 border-border text-foreground placeholder:text-muted-foreground"
                     required
                     data-testid="input-email"
                   />
@@ -92,23 +102,23 @@ export default function Login() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="password" className="text-slate-200">Password</Label>
+                <Label htmlFor="password" className="text-foreground">Password</Label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-2.5 h-5 w-5 text-slate-400" />
+                  <Lock className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
                   <Input
                     id="password"
                     type={showPassword ? "text" : "password"}
                     placeholder="••••••••"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="pl-10 pr-10 bg-slate-700/50 border-slate-600 text-white placeholder:text-slate-400"
+                    className="pl-10 pr-10 bg-muted/50 border-border text-foreground placeholder:text-muted-foreground"
                     required
                     data-testid="input-password"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-300"
+                    className="absolute right-3 top-2.5 text-muted-foreground hover:text-foreground"
                     data-testid="button-toggle-password"
                   >
                     {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
@@ -118,7 +128,7 @@ export default function Login() {
 
               <Button
                 type="submit"
-                className="w-full bg-blue-600 hover:bg-blue-700"
+                className="w-full"
                 disabled={isLoggingIn}
                 data-testid="button-login"
               >
@@ -133,10 +143,10 @@ export default function Login() {
               </Button>
             </form>
 
-            <div className="mt-6 text-center text-slate-400">
+            <div className="mt-6 text-center text-muted-foreground">
               <p>
                 Don't have an account?{' '}
-                <Link href="/signup" className="text-blue-400 hover:text-blue-300 underline" data-testid="link-signup">
+                <Link href="/signup" className="text-primary hover:text-primary/80 underline" data-testid="link-signup">
                   Create one
                 </Link>
               </p>
@@ -144,8 +154,8 @@ export default function Login() {
           </CardContent>
         </Card>
 
-        <p className="text-center text-slate-500 text-sm mt-6">
-          <Link href="/" className="hover:text-slate-400">
+        <p className="text-center text-muted-foreground text-sm mt-6">
+          <Link href="/" className="hover:text-foreground">
             Back to home
           </Link>
         </p>

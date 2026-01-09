@@ -35,7 +35,7 @@ export default function VerifyEmail() {
   }, [verifyEmail]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-background px-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <Link href="/" className="inline-block">
@@ -43,25 +43,24 @@ export default function VerifyEmail() {
           </Link>
         </div>
 
-        <Card className="border-slate-700 bg-slate-800/50 backdrop-blur">
+        <Card className="border-border bg-card/50 backdrop-blur">
           <CardContent className="pt-6">
             <div className="text-center">
               {status === 'loading' && (
                 <>
-                  <Loader2 className="w-16 h-16 text-blue-500 mx-auto mb-4 animate-spin" />
-                  <h2 className="text-xl font-semibold text-white mb-2">Verifying your email...</h2>
-                  <p className="text-slate-400">Please wait a moment</p>
+                  <Loader2 className="w-16 h-16 text-primary mx-auto mb-4 animate-spin" />
+                  <h2 className="text-xl font-semibold text-foreground mb-2">Verifying your email...</h2>
+                  <p className="text-muted-foreground">Please wait a moment</p>
                 </>
               )}
 
               {status === 'success' && (
                 <>
-                  <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
-                  <h2 className="text-xl font-semibold text-white mb-2">Email Verified!</h2>
-                  <p className="text-slate-400 mb-6">{message}</p>
+                  <CheckCircle className="w-16 h-16 text-primary mx-auto mb-4" />
+                  <h2 className="text-xl font-semibold text-foreground mb-2">Email Verified!</h2>
+                  <p className="text-muted-foreground mb-6">{message}</p>
                   <Button
                     onClick={() => navigate('/login')}
-                    className="bg-blue-600 hover:bg-blue-700"
                     data-testid="button-go-to-login"
                   >
                     Continue to Login
@@ -71,18 +70,18 @@ export default function VerifyEmail() {
 
               {status === 'error' && (
                 <>
-                  <XCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-                  <h2 className="text-xl font-semibold text-white mb-2">Verification Failed</h2>
-                  <p className="text-slate-400 mb-6">{message}</p>
+                  <XCircle className="w-16 h-16 text-destructive mx-auto mb-4" />
+                  <h2 className="text-xl font-semibold text-foreground mb-2">Verification Failed</h2>
+                  <p className="text-muted-foreground mb-6">{message}</p>
                   <div className="space-y-3">
                     <Button
                       onClick={() => navigate('/login')}
-                      className="w-full bg-blue-600 hover:bg-blue-700"
+                      className="w-full"
                     >
                       Go to Login
                     </Button>
                     <Link href="/resend-verification">
-                      <Button variant="outline" className="w-full border-slate-600 text-slate-300 hover:bg-slate-700">
+                      <Button variant="outline" className="w-full border-border text-muted-foreground hover:bg-muted">
                         Resend Verification Email
                       </Button>
                     </Link>

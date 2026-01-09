@@ -80,8 +80,8 @@ export default function Settings() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
-        <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
       </div>
     );
   }
@@ -92,11 +92,11 @@ export default function Settings() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 px-4 py-8">
+    <div className="min-h-screen bg-background px-4 py-8">
       <div className="max-w-2xl mx-auto">
         <Button
           variant="ghost"
-          className="text-slate-400 hover:text-white mb-6"
+          className="text-muted-foreground hover:text-foreground mb-6"
           onClick={() => navigate('/dashboard')}
           data-testid="button-back"
         >
@@ -104,9 +104,9 @@ export default function Settings() {
           Back to Dashboard
         </Button>
 
-        <Card className="border-slate-700 bg-slate-800/50 backdrop-blur">
+        <Card className="border-border bg-card/50 backdrop-blur">
           <CardHeader>
-            <CardTitle className="text-white flex items-center gap-2">
+            <CardTitle className="text-foreground flex items-center gap-2">
               <User className="w-5 h-5" />
               Account Settings
             </CardTitle>
@@ -128,67 +128,67 @@ export default function Settings() {
               )}
 
               <div className="space-y-4">
-                <h3 className="text-lg font-medium text-white">Profile Information</h3>
+                <h3 className="text-lg font-medium text-foreground">Profile Information</h3>
                 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="firstName" className="text-slate-200">First Name</Label>
+                    <Label htmlFor="firstName" className="text-foreground">First Name</Label>
                     <Input
                       id="firstName"
                       value={firstName}
                       onChange={(e) => setFirstName(e.target.value)}
-                      className="bg-slate-700/50 border-slate-600 text-white"
+                      className="bg-muted/50 border-border text-foreground"
                       data-testid="input-firstname"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="lastName" className="text-slate-200">Last Name</Label>
+                    <Label htmlFor="lastName" className="text-foreground">Last Name</Label>
                     <Input
                       id="lastName"
                       value={lastName}
                       onChange={(e) => setLastName(e.target.value)}
-                      className="bg-slate-700/50 border-slate-600 text-white"
+                      className="bg-muted/50 border-border text-foreground"
                       data-testid="input-lastname"
                     />
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="email" className="text-slate-200">Email</Label>
+                  <Label htmlFor="email" className="text-foreground">Email</Label>
                   <div className="relative">
-                    <Mail className="absolute left-3 top-2.5 h-5 w-5 text-slate-400" />
+                    <Mail className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
                     <Input
                       id="email"
                       type="email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="pl-10 bg-slate-700/50 border-slate-600 text-white"
+                      className="pl-10 bg-muted/50 border-border text-foreground"
                       data-testid="input-email"
                     />
                   </div>
                 </div>
               </div>
 
-              <div className="border-t border-slate-700 pt-6 space-y-4">
-                <h3 className="text-lg font-medium text-white">Change Password</h3>
-                <p className="text-sm text-slate-400">Leave blank to keep your current password</p>
+              <div className="border-t border-border pt-6 space-y-4">
+                <h3 className="text-lg font-medium text-foreground">Change Password</h3>
+                <p className="text-sm text-muted-foreground">Leave blank to keep your current password</p>
 
                 <div className="space-y-2">
-                  <Label htmlFor="currentPassword" className="text-slate-200">Current Password</Label>
+                  <Label htmlFor="currentPassword" className="text-foreground">Current Password</Label>
                   <div className="relative">
-                    <Lock className="absolute left-3 top-2.5 h-5 w-5 text-slate-400" />
+                    <Lock className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
                     <Input
                       id="currentPassword"
                       type={showCurrentPassword ? 'text' : 'password'}
                       value={currentPassword}
                       onChange={(e) => setCurrentPassword(e.target.value)}
-                      className="pl-10 pr-10 bg-slate-700/50 border-slate-600 text-white"
+                      className="pl-10 pr-10 bg-muted/50 border-border text-foreground"
                       data-testid="input-current-password"
                     />
                     <button
                       type="button"
                       onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                      className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-300"
+                      className="absolute right-3 top-2.5 text-muted-foreground hover:text-foreground"
                     >
                       {showCurrentPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                     </button>
@@ -196,22 +196,22 @@ export default function Settings() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="newPassword" className="text-slate-200">New Password</Label>
+                  <Label htmlFor="newPassword" className="text-foreground">New Password</Label>
                   <div className="relative">
-                    <Lock className="absolute left-3 top-2.5 h-5 w-5 text-slate-400" />
+                    <Lock className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
                     <Input
                       id="newPassword"
                       type={showNewPassword ? 'text' : 'password'}
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
                       placeholder="At least 8 characters"
-                      className="pl-10 pr-10 bg-slate-700/50 border-slate-600 text-white placeholder:text-slate-500"
+                      className="pl-10 pr-10 bg-muted/50 border-border text-foreground placeholder:text-muted-foreground"
                       data-testid="input-new-password"
                     />
                     <button
                       type="button"
                       onClick={() => setShowNewPassword(!showNewPassword)}
-                      className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-300"
+                      className="absolute right-3 top-2.5 text-muted-foreground hover:text-foreground"
                     >
                       {showNewPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                     </button>
@@ -219,15 +219,15 @@ export default function Settings() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="confirmPassword" className="text-slate-200">Confirm New Password</Label>
+                  <Label htmlFor="confirmPassword" className="text-foreground">Confirm New Password</Label>
                   <div className="relative">
-                    <Lock className="absolute left-3 top-2.5 h-5 w-5 text-slate-400" />
+                    <Lock className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
                     <Input
                       id="confirmPassword"
                       type="password"
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
-                      className="pl-10 bg-slate-700/50 border-slate-600 text-white"
+                      className="pl-10 bg-muted/50 border-border text-foreground"
                       data-testid="input-confirm-new-password"
                     />
                   </div>
@@ -236,7 +236,7 @@ export default function Settings() {
 
               <Button
                 type="submit"
-                className="w-full bg-blue-600 hover:bg-blue-700"
+                className="w-full"
                 disabled={updateMutation.isPending}
                 data-testid="button-save-profile"
               >
