@@ -1,4 +1,5 @@
 import { ForexAnalysisResult } from './openai';
+import { logError, logInfo } from './logger';
 
 type OHLCV = { t: number; open: number; high: number; low: number; close: number; volume?: number };
 
@@ -109,7 +110,8 @@ export function detectCandlestickPatterns(ohlcv: OHLCV[]) {
 }
 
 export function analyzePriceSeries(ohlcv: OHLCV[], symbol = 'Unknown', timeframe = 'Unknown'): Partial<ForexAnalysisResult> & { qualityScore: number; patterns: string[] } {
-  const closes = ohlcv.map(c => c.close);
+  try {
+    const closes = ohlcv.map(c => c.close);
   const highs = ohlcv.map(c => c.high);
   const lows = ohlcv.map(c => c.low);
 
@@ -121,7 +123,7 @@ export function analyzePriceSeries(ohlcv: OHLCV[], symbol = 'Unknown', timeframe
   const lastLower = bb.lower[bb.lower.length - 1];
   const lastMiddle = bb.middle[bb.middle.length - 1];
 
-  const patterns = detectCandlestickPatterns(ohlcv);
+    const patterns = detectCandlestickPatterns(ohlcv);
 
   // Entry suggestion: near support/resistance defined by Bollinger bands and recent swings
   const recentHigh = Math.max(...highs.slice(-20));
@@ -140,7 +142,7 @@ export function analyzePriceSeries(ohlcv: OHLCV[], symbol = 'Unknown', timeframe
     takeProfit = [((closes[closes.length - 1]) - (closes[closes.length - 1] - recentLow) * 0.6).toFixed(5)];
   }
 
-  // Overbought / oversold
+    // Overbought / oversold
   const overbought = lastRsi >= 70;
   const oversold = lastRsi <= 30;
 
@@ -152,7 +154,7 @@ export function analyzePriceSeries(ohlcv: OHLCV[], symbol = 'Unknown', timeframe
   if (overbought || oversold) quality += 5;
   quality = Math.max(0, Math.min(100, quality));
 
-  return {
+    const result = {
     symbol,
     timeframe,
     trend: (trend as 'bullish' | 'bearish' | 'neutral'),
@@ -170,9 +172,35 @@ export function analyzePriceSeries(ohlcv: OHLCV[], symbol = 'Unknown', timeframe
       patterns.length ? `Candlestick: ${patterns.join(', ')}` : 'No clear candlestick confirmation',
       `RSI: ${lastRsi ? Math.round(lastRsi) : 'N/A'}`,
     ],
-    qualityScore: quality,
-    patterns,
-  };
+      qualityScore: quality,
+      patterns,
+    };
+
+    // Log a brief info about analysis
+    void logInfo('ai', `Performed deterministic analysis for ${symbol} ${timeframe}`, { trend: result.trend, confidence: result.confidence });
+
+    return result;
+  } catch (error: any) {
+    // Log error and return a safe fallback
+    void logError('ai', `Price analysis failed: ${error?.message || String(error)}`, { error: String(error) });
+    return {
+      symbol: symbol || 'Unknown',
+      timeframe: timeframe || 'Unknown',
+      trend: 'neutral',
+      confidence: 0,
+      entry: 'Analysis failed',
+      stopLoss: 'Analysis failed',
+      takeProfit: ['Analysis failed'],
+      support: 'Analysis failed',
+      resistance: 'Analysis failed',
+      momentum: 'Unable to analyze',
+      rsi: 'Unable to analyze',
+      volume: 'Unable to analyze',
+      reasoning: [`Analysis error: ${error?.message || String(error)}`],
+      qualityScore: 0,
+      patterns: [],
+    };
+  }
 }
 
 export default {

@@ -366,6 +366,7 @@ export async function registerRoutes(
       res.json(analysis);
     } catch (error: any) {
       console.error('Price analysis error:', error);
+      await logError('ai', `Price-series analysis failed: ${error?.message || String(error)}`, { stack: error?.stack?.split('\n').slice(0,5).join('\n'), error: String(error) }, userId);
       res.status(500).json({ error: error.message || 'Failed to analyze price series' });
     }
   });
